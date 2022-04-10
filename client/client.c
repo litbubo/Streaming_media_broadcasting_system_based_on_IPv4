@@ -52,7 +52,7 @@ static ssize_t writen(int fd, const void *buf, size_t count) // 自定义封装�
         {
             if (errno == EINTR) // 中断系统调用，重启 write
                 goto again;
-            perror("write()");
+            fprintf(stderr, "write() : %s\n", strerror(errno));
             return -1;
         }
     }
@@ -129,13 +129,13 @@ int main(int argc, char **argv)
     ret = pipe(fd);
     if (ret < 0)
     {
-        fprintf(stderr, "pipe() : %s", strerror(errno));
+        fprintf(stderr, "pipe() : %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
     pid = fork();
     if (pid < 0)
     {
-        fprintf(stderr, "fork() : %s", strerror(errno));
+        fprintf(stderr, "fork() : %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
     else if (pid == 0)
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
         dup2(fd[0], STDIN_FILENO);
         close(fd[0]);
         execl("/bin/sh", "sh", "-c", conf.playercmd, NULL); // 使用shell解释器来运行 mpg123
-        fprintf(stderr, "execl() : %s", strerror(errno));
+        fprintf(stderr, "execl() : %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -157,21 +157,21 @@ int main(int argc, char **argv)
     ret = bind(sfd, (void *)&addr, sizeof(addr)); // 绑定本地 IP ，端口
     if (ret < 0)
     {
-        fprintf(stderr, "bind() : %s", strerror(errno));
+        fprintf(stderr, "bind() : %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     ret = setsockopt(sfd, SOL_SOCKET, SO_RCVBUF, &receive_buf_size, sizeof(receive_buf_size));
     if (ret < 0)
     {
-        fprintf(stderr, "SO_RCVBUF : %s", strerror(errno));
+        fprintf(stderr, "SO_RCVBUF : %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
     val = 1;
     ret = setsockopt(sfd, IPPROTO_IP, IP_MULTICAST_LOOP, &(val), sizeof(val));
     if (ret < 0)
     {
-        fprintf(stderr, "IP_MULTICAST_LOOP : %s", strerror(errno));
+        fprintf(stderr, "IP_MULTICAST_LOOP : %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -181,7 +181,7 @@ int main(int argc, char **argv)
     ret = setsockopt(sfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &group, sizeof(group));
     if (ret < 0)
     {
-        fprintf(stderr, "IP_ADD_MEMBERSHIP() : %s", strerror(errno));
+        fprintf(stderr, "IP_ADD_MEMBERSHIP() : %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -207,7 +207,7 @@ int main(int argc, char **argv)
     desc_list_t *desc;
     for (desc = msg_list->list; (char *)desc < (char *)msg_list + len; desc = (void *)((char *)desc + ntohs(desc->deslength)))
     {
-        fprintf(stdout, "chnid = %d, description = %s", desc->chnid, desc->desc);
+        fprintf(stdout, "chnid = %d, description = %s\n", desc->chnid, desc->desc);
     }
     free(msg_list);
     msg_list = NULL;
