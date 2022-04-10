@@ -1,0 +1,17 @@
+#ifndef __CLIENT_H__
+#define __CLIENT_H__
+
+// #define DEFAULT_PALYERCMD "/usr/bin/mpg123 - > /dev/null"
+
+#define DEFAULT_PALYERCMD "/usr/bin/mpg123 -"
+
+#include <stdint.h>
+
+typedef struct client_conf_t
+{
+    char *mgroup;
+    char *recvport;
+    char *playercmd;
+}client_conf_t;
+
+#endif // !__CLIENT_H__
