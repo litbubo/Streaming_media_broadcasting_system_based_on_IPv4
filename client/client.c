@@ -11,31 +11,36 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 #include <errno.h>
+#include <signal.h>
 
 #include "client.h"
 
-client_conf_t conf =
+msg_list_t *msg_list = NULL;
+msg_channel_t *msg_channel = NULL;
+int sfd;
+
+client_conf_t conf = // client 配置
     {
         .mgroup = DEFAULT_MGROUP,
         .recvport = DEFAULT_RECVPORT,
-        .playercmd = DEFAULT_PALYERCMD};
+        .playercmd = DEFAULT_PALYERCMD  };
 
 struct option opt[] =
     {
-        {"port", required_argument, NULL, 'P'},
-        {"mgroup", required_argument, NULL, 'M'},
-        {"player", required_argument, NULL, 'p'},
-        {"help", no_argument, NULL, 'H'}};
+        {"port",    required_argument, NULL, 'P'},
+        {"mgroup",  required_argument, NULL, 'M'},
+        {"player",  required_argument, NULL, 'p'},
+        {"help",    no_argument,       NULL, 'H'}   };
 
 static void print_help()
 {
-    printf("-P --port   自定义接收端口\n");
+    printf("-P --port   自定义接收端口  \n");
     printf("-M --mgroup 自定义多播组地址\n");
     printf("-p --player 自定义音乐解码器\n");
-    printf("-H --help   显示帮助\n");
+    printf("-H --help   显示帮助       \n");
 }
 
-static ssize_t writen(int fd, const void *buf, size_t count)
+static ssize_t writen(int fd, const void *buf, size_t count) // 自定义封装函数，保证写足 count 字节
 {
     size_t len, total, ret;
     total = count;
@@ -45,7 +50,7 @@ static ssize_t writen(int fd, const void *buf, size_t count)
         ret = write(fd, buf + len, total);
         if (ret < 0)
         {
-            if (errno == EINTR)
+            if (errno == EINTR) // 中断系统调用，重启 write
                 goto again;
             perror("write()");
             return -1;
@@ -54,28 +59,46 @@ static ssize_t writen(int fd, const void *buf, size_t count)
     return len;
 }
 
-static void exit_free()
+static void exit_action(int s)      // 信号捕捉函数，用于推出前清理
 {
+    pid_t pid;
+    pid = getpgid(getpid());
+    if (msg_list != NULL)
+        free(msg_list);
+    if (msg_channel != NULL)
+        free(msg_channel);
+    close(sfd);
+    fprintf(stdout, "\nthis programme is going to exit...\n");
+    kill(-pid, SIGQUIT);
+    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
 {
     int arg;
     int ret;
-    int sfd;
     int fd[2];
     int val;
     int chosen;
     char ip[20];
-    uint64_t receive_buf_size = 20 * 1024 * 1024; // 20 MB
+    uint64_t receive_buf_size = 20 * 1024 * 1024; // 20MB
     pid_t pid;
     struct ip_mreqn group;
     struct sockaddr_in addr, list_addr, data_addr;
     socklen_t socklen;
-    msg_list_t *msg_list;
-    msg_channel_t *msg_channel;
-
     int len;
+
+    struct sigaction action;
+    action.sa_flags = 0;
+    sigemptyset(&action.sa_mask);
+    sigaddset(&action.sa_mask, SIGINT);
+    sigaddset(&action.sa_mask, SIGQUIT);
+    sigaddset(&action.sa_mask, SIGTSTP);
+    action.sa_handler = exit_action;
+    sigaction(SIGINT,  &action, NULL);       // 注册信号捕捉函数
+    sigaction(SIGQUIT, &action, NULL);
+    sigaction(SIGTSTP, &action, NULL);
+
     while (1)
     {
         arg = getopt_long(argc, argv, "P:M:p:H", opt, NULL);
@@ -106,13 +129,13 @@ int main(int argc, char **argv)
     ret = pipe(fd);
     if (ret < 0)
     {
-        perror("pipe");
+        fprintf(stderr, "pipe() : %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
     pid = fork();
     if (pid < 0)
     {
-        perror("fork");
+        fprintf(stderr, "fork() : %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
     else if (pid == 0)
@@ -120,8 +143,8 @@ int main(int argc, char **argv)
         close(fd[1]);
         dup2(fd[0], STDIN_FILENO);
         close(fd[0]);
-        execl("/bin/sh", "sh", "-c", conf.playercmd, NULL);
-        perror("exec");
+        execl("/bin/sh", "sh", "-c", conf.playercmd, NULL); // 使用shell解释器来运行 mpg123
+        fprintf(stderr, "execl() : %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -131,24 +154,24 @@ int main(int argc, char **argv)
     addr.sin_family = AF_INET;
     inet_pton(AF_INET, "0.0.0.0", &addr.sin_addr);
     addr.sin_port = htons(atoi(conf.recvport));
-    ret = bind(sfd, (void *)&addr, sizeof(addr));
+    ret = bind(sfd, (void *)&addr, sizeof(addr)); // 绑定本地 IP ，端口
     if (ret < 0)
     {
-        perror("bind()");
+        fprintf(stderr, "bind() : %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     ret = setsockopt(sfd, SOL_SOCKET, SO_RCVBUF, &receive_buf_size, sizeof(receive_buf_size));
     if (ret < 0)
     {
-        perror("setsockopt():SO_RCVBUF");
+        fprintf(stderr, "SO_RCVBUF : %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
     val = 1;
     ret = setsockopt(sfd, IPPROTO_IP, IP_MULTICAST_LOOP, &(val), sizeof(val));
     if (ret < 0)
     {
-        perror("setsockopt():IP_MULTICAST_LOOP");
+        fprintf(stderr, "IP_MULTICAST_LOOP : %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -158,7 +181,7 @@ int main(int argc, char **argv)
     ret = setsockopt(sfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &group, sizeof(group));
     if (ret < 0)
     {
-        perror("setsockopt():IP_ADD_MEMBERSHIP");
+        fprintf(stderr, "IP_ADD_MEMBERSHIP() : %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -170,21 +193,21 @@ int main(int argc, char **argv)
         len = recvfrom(sfd, msg_list, MAX_LISTCHN_DATA, 0, (void *)&list_addr, &socklen);
         if (len < sizeof(msg_list_t))
         {
-            printf("data is too short\n");
+            fprintf(stderr, "data is too short, len = %d...\n", len);
             continue;
         }
         if (msg_list->chnid == LISTCHNID)
         {
-            printf("list from IP = %s, Port = %d\n",
-                   inet_ntop(AF_INET, &list_addr.sin_addr, ip, sizeof(ip)),
-                   ntohs(list_addr.sin_port));
+            fprintf(stdout, "list from IP = %s, Port = %d\n",
+                    inet_ntop(AF_INET, &list_addr.sin_addr, ip, sizeof(ip)),
+                    ntohs(list_addr.sin_port));
             break;
         }
     }
     desc_list_t *desc;
     for (desc = msg_list->list; (char *)desc < (char *)msg_list + len; desc = (void *)((char *)desc + ntohs(desc->deslength)))
     {
-        printf("chnid = %d, description = %s", desc->chnid, desc->desc);
+        fprintf(stdout, "chnid = %d, description = %s", desc->chnid, desc->desc);
     }
     free(msg_list);
     msg_list = NULL;
@@ -206,12 +229,12 @@ int main(int argc, char **argv)
         len = recvfrom(sfd, msg_channel, MAX_CHANNEL_DATA, 0, (void *)&data_addr, &socklen);
         if (len < sizeof(msg_channel_t))
         {
-            printf("data is too short\n");
+            fprintf(stderr, "data is too short, len = %d...\n", len);
             continue;
         }
         else if (data_addr.sin_addr.s_addr != list_addr.sin_addr.s_addr || data_addr.sin_port != list_addr.sin_port)
         {
-            printf("data is not match!\n");
+            fprintf(stderr, "data is not match!\n");
             continue;
         }
         if (msg_channel->chnid == chosen)
