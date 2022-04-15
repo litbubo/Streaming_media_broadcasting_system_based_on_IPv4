@@ -23,14 +23,14 @@ client_conf_t conf = // client 配置
     {
         .mgroup = DEFAULT_MGROUP,
         .recvport = DEFAULT_RECVPORT,
-        .playercmd = DEFAULT_PALYERCMD  };
+        .playercmd = DEFAULT_PALYERCMD};
 
 struct option opt[] =
     {
-        {"port",    required_argument, NULL, 'P'},
-        {"mgroup",  required_argument, NULL, 'M'},
-        {"player",  required_argument, NULL, 'p'},
-        {"help",    no_argument,       NULL, 'H'}   };
+        {"port", required_argument, NULL, 'P'},
+        {"mgroup", required_argument, NULL, 'M'},
+        {"player", required_argument, NULL, 'p'},
+        {"help", no_argument, NULL, 'H'}};
 
 static void print_help()
 {
@@ -59,7 +59,7 @@ static ssize_t writen(int fd, const void *buf, size_t count) // 自定义封装�
     return len;
 }
 
-static void exit_action(int s)      // 信号捕捉函数，用于推出前清理
+static void exit_action(int s) // 信号捕捉函数，用于推出前清理
 {
     pid_t pid;
     pid = getpgid(getpid());
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
     sigaddset(&action.sa_mask, SIGQUIT);
     sigaddset(&action.sa_mask, SIGTSTP);
     action.sa_handler = exit_action;
-    sigaction(SIGINT,  &action, NULL);       // 注册信号捕捉函数
+    sigaction(SIGINT, &action, NULL); // 注册信号捕捉函数
     sigaction(SIGQUIT, &action, NULL);
     sigaction(SIGTSTP, &action, NULL);
 
