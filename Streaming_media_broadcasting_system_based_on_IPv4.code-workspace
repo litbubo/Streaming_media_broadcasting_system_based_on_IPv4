@@ -4,5 +4,29 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"atomic": "cpp",
+			"chrono": "cpp",
+			"condition_variable": "cpp",
+			"functional": "cpp",
+			"memory": "cpp",
+			"future": "cpp",
+			"mutex": "cpp",
+			"new": "cpp",
+			"system_error": "cpp",
+			"thread": "cpp",
+			"tuple": "cpp",
+			"type_traits": "cpp",
+			"utility": "cpp",
+			"protocol.h": "c",
+			"glob.h": "c",
+			"tokenbucket.h": "c",
+			"ratio": "c",
+			"stat.h": "c",
+			"list.h": "c",
+			"server_conf.h": "c",
+			"threadpool.h": "c"
+		}
+	}
 }

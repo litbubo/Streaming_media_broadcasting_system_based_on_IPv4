@@ -23,20 +23,20 @@ typedef uint8_t chnid_t;
 typedef struct msg_channel_t                    // 频道包
 {
     chnid_t chnid;
-    uint8_t data[1];
+    uint8_t data[0];
 } __attribute__((packed)) msg_channel_t;
 
 typedef struct desc_list_t                      // 单个节目信息包
 {
     chnid_t chnid;
     uint16_t deslength;                         // 自述包长度
-    uint8_t desc[1];
+    uint8_t desc[0];
 } __attribute__((packed)) desc_list_t;
 
 typedef struct msg_list_t                       // 节目单包
 {
     chnid_t chnid;
-    desc_list_t list[1];
+    desc_list_t list[0];
 } __attribute__((packed)) msg_list_t;
 
 #endif // !__PROTOCOL_H__
