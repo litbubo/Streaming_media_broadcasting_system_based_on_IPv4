@@ -1,4 +1,4 @@
-#include "ThreadPool.h"
+#include "Threadpool.h"
 
 #include <pthread.h>
 #include <stdio.h>
@@ -14,7 +14,7 @@
 
 typedef struct Task_t           // 定义任务类型
 {
-    void (*function)(void *);   // 保存添加进来的任务函数
+    void (*function)(void *, int *);   // 保存添加进来的任务函数
     void *arg;                  // 保存任务函数的参数
 } Task_t;
 
@@ -39,7 +39,7 @@ struct ThreadPool_t // 定义线程池类型
     pthread_cond_t notFull;     // 非满条件变量，用于唤醒生产者(添加任务函数)
     pthread_cond_t notEmpty;    // 非空条件变量，用于唤醒消费者(工作者线程)
 
-    int shutstatus;             // 线程池状态，0 打开，-1 关闭
+    volatile int shutstatus;             // 线程池状态，0 打开，-1 关闭
 };
 
 /**
@@ -122,13 +122,14 @@ static void *working(void *arg)
         fprintf(stdout, "[thread = %ld] is going to work...\n", pthread_self());
 #endif // DEBUG
 
-        task.function(task.arg); // 执行任务
+        task.function(task.arg, &(pool->shutstatus)); // 执行任务
 
 #ifdef DEBUG
         fprintf(stdout, "[thread = %ld] is done work...\n", pthread_self());
 #endif // DEBUG
 
         free(task.arg); // 释放任务资源
+        fprintf(stdout, "[thread = %ld] is free successful ................................\n", pthread_self());
         task.function = NULL;
         task.arg = NULL;
         pthread_mutex_lock(&pool->mutexBusy);
@@ -194,7 +195,9 @@ static void *manager(void *arg)
                 pthread_cond_signal(&pool->notEmpty); // 唤醒工作线程，让其自杀
             }
         }
+#ifdef DEBUG
         printStatus(pool); // 打印线程池中线程信息
+#endif // DEBUG
         sched_yield();     // 出让调度器
     }
     pthread_exit(NULL);
@@ -299,6 +302,7 @@ int threadPool_Destroy(ThreadPool_t *argPool)
     {
         pthread_cond_signal(&pool->notEmpty); // 唤醒所有存活线程，让其自杀
     }
+    sleep(1);
 
     pthread_mutex_destroy(&pool->mutexBusy);
     pthread_mutex_destroy(&pool->mutexPool);
@@ -326,7 +330,7 @@ int threadPool_Destroy(ThreadPool_t *argPool)
  * 参数 ： argPool：需要添加任务的线程池， function：任务函数，arg：任务函数参数
  *
  */
-int threadPool_Addtask(ThreadPool_t *argPool, void (*function)(void *), void *arg)
+int threadPool_Addtask(ThreadPool_t *argPool, void (*function)(void *, int*), void *arg)
 {
     struct ThreadPool_t *pool = (struct ThreadPool_t *)argPool;
 

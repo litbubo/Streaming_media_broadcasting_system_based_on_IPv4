@@ -7,7 +7,7 @@ typedef void ThreadPool_t;                  // 对外隐藏ThreadPool_t内部实
 
 ThreadPool_t* threadPool_Create(int min, int max, int queueCapacity);   // 新创建一个线程池
 
-int threadPool_Addtask(ThreadPool_t *, void (*)(void *), void *);       // 向任务队列添加一个任务
+int threadPool_Addtask(ThreadPool_t *, void (*)(void *, int *), void *);       // 向任务队列添加一个任务
 
 int threadPool_Destroy(ThreadPool_t *);                                 // 销毁一个线程池
 
