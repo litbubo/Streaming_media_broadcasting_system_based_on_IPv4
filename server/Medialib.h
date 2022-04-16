@@ -15,6 +15,8 @@ int mlib_getchnlist(struct mlib_listdesc_t **, int *);
 
 int mlib_freechnlist(struct mlib_listdesc_t *);
 
+int mlib_freechncontext();
+
 ssize_t mlib_readchn(chnid_t, void *, size_t);
 
 #endif // !__MEDIALIB_H__

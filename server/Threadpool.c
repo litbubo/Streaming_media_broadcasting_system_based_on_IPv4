@@ -129,7 +129,11 @@ static void *working(void *arg)
 #endif // DEBUG
 
         free(task.arg); // 释放任务资源
-        fprintf(stdout, "[thread = %ld] is free successful ................................\n", pthread_self());
+
+#ifdef DEBUG
+        fprintf(stdout, "[thread = %ld] is free successful...\n", pthread_self());
+#endif // DEBUG
+
         task.function = NULL;
         task.arg = NULL;
         pthread_mutex_lock(&pool->mutexBusy);
@@ -156,8 +160,8 @@ static void *manager(void *arg)
     int i, count;
     while (pool->shutstatus == 0)
     {
-        tv.tv_sec = 0;                    // 定时500ms，可根据实际场景改变
-        tv.tv_usec = 500000;              // ！！每次定时都需要重新设定数值！！
+        tv.tv_sec = 2;                    // 定时500ms，可根据实际场景改变
+        tv.tv_usec = 0;              // ！！每次定时都需要重新设定数值！！
         select(0, NULL, NULL, NULL, &tv); // select作为延时函数，替换sleep，保证线程安全
 
         pthread_mutex_lock(&pool->mutexPool);

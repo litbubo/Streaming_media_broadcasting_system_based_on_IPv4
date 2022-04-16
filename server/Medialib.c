@@ -46,7 +46,6 @@ static channel_context_t *getpathcontent(const char *path)
     if (descfd < 0)
     {
         fprintf(stderr, "this is not a lib ...\n");
-       
         return NULL;
     }
     ret = read(descfd, linebuf, LINEBUFSIZE);
@@ -139,6 +138,7 @@ int mlib_getchnlist(mlib_listdesc_t **list, int *size)
             tmp[total_chn].chnid = retmp->chnid;
             tmp[total_chn].desc = strdup(retmp->desc);
             total_chn++;
+            free(retmp);
         }
     }
     *list = realloc(tmp, sizeof(mlib_listdesc_t) * total_chn);
@@ -148,6 +148,7 @@ int mlib_getchnlist(mlib_listdesc_t **list, int *size)
         return -1;
     }
     *size = total_chn;
+    globfree(&globes);
     return 0;
 }
 
@@ -159,6 +160,17 @@ int mlib_freechnlist(struct mlib_listdesc_t *list)
         free(list[i].desc);
     }
     free(list);
+    return 0;
+}
+
+int mlib_freechncontext()
+{
+    int i;
+    for (i = 0; i < total_chn; i++) 
+    {
+        free (chn_context[i].desc);
+        globfree(&chn_context[i].globes);
+    }
     return 0;
 }
 

@@ -67,10 +67,7 @@ int main(int argc, char **argv)
     socket_init();
 
     pool = threadPool_Create(5, 20, 20);
-
-
     int list_size;
-    int err;
     // list 频道的描述信息
     // list_size有几个频道
     mlib_getchnlist(&list, &list_size);
@@ -79,5 +76,6 @@ int main(int argc, char **argv)
 
     sleep(50);
     threadPool_Destroy(pool);
+    mlib_freechncontext();
     exit(EXIT_SUCCESS);
 }
