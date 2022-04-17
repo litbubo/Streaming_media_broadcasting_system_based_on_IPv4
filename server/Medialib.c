@@ -176,6 +176,7 @@ int mlib_freechncontext()
     {
         free (chn_context[i].desc);
         globfree(&chn_context[i].globes);
+        close(chn_context[i].fd);
     }
     return 0;
 }
