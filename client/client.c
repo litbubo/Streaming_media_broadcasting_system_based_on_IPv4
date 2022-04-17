@@ -21,16 +21,18 @@ int sfd;
 
 client_conf_t conf = // client 配置
     {
-        .mgroup = DEFAULT_MGROUP,
-        .recvport = DEFAULT_RECVPORT,
-        .playercmd = DEFAULT_PALYERCMD};
+        .mgroup     = DEFAULT_MGROUP,
+        .recvport   = DEFAULT_RECVPORT,
+        .playercmd  = DEFAULT_PALYERCMD
+    };
 
 struct option opt[] =
     {
-        {"port", required_argument, NULL, 'P'},
-        {"mgroup", required_argument, NULL, 'M'},
-        {"player", required_argument, NULL, 'p'},
-        {"help", no_argument, NULL, 'H'}};
+        {"port"  ,  required_argument, NULL, 'P'},
+        {"mgroup",  required_argument, NULL, 'M'},
+        {"player",  required_argument, NULL, 'p'},
+        {"help"  ,  no_argument      , NULL, 'H'}
+    };
 
 static void print_help()
 {
@@ -68,8 +70,8 @@ static void exit_action(int s) // 信号捕捉函数，用于推出前清理
     if (msg_channel != NULL)
         free(msg_channel);
     close(sfd);
-    fprintf(stdout, "\nthis programme is going to exit...\n");
     kill(-pid, SIGQUIT);
+    fprintf(stdout, "\nthis programme is going to exit...\n");
     exit(EXIT_SUCCESS);
 }
 
@@ -87,17 +89,7 @@ int main(int argc, char **argv)
     struct sockaddr_in addr, list_addr, data_addr;
     socklen_t socklen;
     int len;
-
     struct sigaction action;
-    action.sa_flags = 0;
-    sigemptyset(&action.sa_mask);
-    sigaddset(&action.sa_mask, SIGINT);
-    sigaddset(&action.sa_mask, SIGQUIT);
-    sigaddset(&action.sa_mask, SIGTSTP);
-    action.sa_handler = exit_action;
-    sigaction(SIGINT, &action, NULL); // 注册信号捕捉函数
-    sigaction(SIGQUIT, &action, NULL);
-    sigaction(SIGTSTP, &action, NULL);
 
     while (1)
     {
@@ -149,6 +141,17 @@ int main(int argc, char **argv)
     }
 
     close(fd[0]);
+
+    action.sa_flags = 0;
+    sigemptyset(&action.sa_mask);
+    sigaddset(&action.sa_mask, SIGINT);
+    sigaddset(&action.sa_mask, SIGQUIT);
+    sigaddset(&action.sa_mask, SIGTSTP);
+    action.sa_handler = exit_action;
+    sigaction(SIGINT, &action, NULL); // 注册信号捕捉函数
+    sigaction(SIGQUIT, &action, NULL);
+    sigaction(SIGTSTP, &action, NULL);
+
     sfd = socket(AF_INET, SOCK_DGRAM, 0);
 
     addr.sin_family = AF_INET;
