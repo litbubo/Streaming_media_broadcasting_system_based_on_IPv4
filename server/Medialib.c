@@ -33,15 +33,15 @@ static int total_chn = 0; // number
 static channel_context_t *getpathcontent(const char *path)
 {
     char linebuf[LINEBUFSIZE];
-    char pathbuf[NAMESIZE];
+    char pathbuf[PATHSIZE];
     int descfd, ret;
     channel_context_t *me;
     static int curr_chnid = 0;
 
     memset(linebuf, 0, sizeof(linebuf));
     memset(pathbuf, 0, sizeof(pathbuf));
-    strncpy(pathbuf, path, strlen(path) + 1);
-    strcat(pathbuf, "/desc.txt");
+    strncpy(pathbuf, path, PATHSIZE - 1);
+    strncat(pathbuf, "/desc.txt", NAMESIZE - 1);
     descfd = open(pathbuf, O_RDONLY);
     if (descfd < 0)
     {
@@ -73,8 +73,8 @@ static channel_context_t *getpathcontent(const char *path)
         return NULL;
     }
     memset(pathbuf, 0, sizeof(pathbuf));
-    strncpy(pathbuf, path, strlen(path) + 1);
-    strcat(pathbuf, "/*.mp3");
+    strncpy(pathbuf, path, PATHSIZE - 1);
+    strncat(pathbuf, "/*.mp3", NAMESIZE - 1);
     ret = glob(pathbuf, 0, NULL, &me->globes);
     if (ret != 0)
     {
