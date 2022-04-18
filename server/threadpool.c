@@ -300,19 +300,16 @@ int threadpool_destroy(ThreadPool_t *argPool)
     }
 
     pool->shutstatus = -1;
-
+    sleep(1);
     pthread_join(pool->managerID, NULL);
     for (int i = 0; i < pool->numLive; i++)
     {
         pthread_cond_signal(&pool->notEmpty); // 唤醒所有存活线程，让其自杀
     }
-    sleep(1);
-
     pthread_mutex_destroy(&pool->mutexBusy);
     pthread_mutex_destroy(&pool->mutexPool);
     pthread_cond_destroy(&pool->notEmpty);
     pthread_cond_destroy(&pool->notFull);
-
     if (pool != NULL && pool->workerIDs != NULL)
         free(pool->workerIDs);
     if (pool != NULL && pool->taskQueue != NULL)

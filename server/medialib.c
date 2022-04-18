@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -15,7 +16,7 @@
 #define NAMESIZE 256
 #define LINEBUFSIZE 1024
 
-#define MP3_BITRATE 64 * 1024 // correct bps:128*1024
+#define MP3_BITRATE (128 * 1024) // correct bps:128*1024
 
 typedef struct channel_context_t
 {
@@ -28,7 +29,7 @@ typedef struct channel_context_t
     tokenbt_t *tb;
 } channel_context_t;
 
-static channel_context_t chn_context[MAXCHNID];
+static channel_context_t chn_context[MAXCHNID + 1];
 static int total_chn = 0; // number
 
 static channel_context_t *getpathcontent(const char *path)
@@ -38,7 +39,7 @@ static channel_context_t *getpathcontent(const char *path)
     char namebuf[NAMESIZE];
     int descfd, ret;
     channel_context_t *me;
-    static int curr_chnid = 0;
+    static int curr_chnid = MINCHNID;
 
     memset(linebuf, 0, sizeof(linebuf));
     memset(pathbuf, 0, sizeof(pathbuf));
@@ -104,6 +105,29 @@ static channel_context_t *getpathcontent(const char *path)
     return me;
 }
 
+static int open_next(chnid_t chnid)
+{
+    int i;
+    for (i = 0; i < chn_context[chnid].globes.gl_pathc; i++)
+    {
+        chn_context[chnid].pos++;
+        if (chn_context[chnid].pos == chn_context[chnid].globes.gl_pathc)
+            chn_context[chnid].pos = 0;
+        close(chn_context[chnid].fd);
+        chn_context[chnid].offset = 0;
+        chn_context[chnid].fd = open(chn_context[chnid].globes.gl_pathv[chn_context[chnid].pos], O_RDONLY);
+        if (chn_context[chnid].fd < 0)
+        {
+            continue;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    return -1;
+}
+
 int mlib_getchnlist(mlib_listdesc_t **list, int *size)
 {
     int i, ret;
@@ -113,7 +137,7 @@ int mlib_getchnlist(mlib_listdesc_t **list, int *size)
     mlib_listdesc_t *tmp;
 
     memset(chn_context, 0, sizeof(chn_context));
-    for (i = 0; i < MAXCHNID; i++)
+    for (i = MINCHNID; i < MAXCHNID + 1; i++)
     {
         chn_context[i].chnid = -1;
     }
@@ -173,16 +197,45 @@ int mlib_freechnlist(struct mlib_listdesc_t *list)
 int mlib_freechncontext()
 {
     int i;
-    for (i = 0; i < total_chn; i++) 
+    for (i = MINCHNID; i < MAXCHNID + 1; i++)
     {
-        free (chn_context[i].desc);
-        globfree(&chn_context[i].globes);
-        close(chn_context[i].fd);
+        if (chn_context[i].chnid != -1)
+        {
+            free(chn_context[i].desc);
+            globfree(&chn_context[i].globes);
+            close(chn_context[i].fd);
+        }
     }
     return 0;
 }
 
 ssize_t mlib_readchn(chnid_t chnid, void *buf, size_t size)
 {
-    return 0;
+    int token, len;
+    token = tokenbt_fetchtoken(chn_context[chnid].tb, size);
+    while (1)
+    {
+        len = pread(chn_context[chnid].fd, buf, token, chn_context[chnid].offset);
+        if (len < 0)
+        {
+            fprintf(stderr, "pread() failed ...\n");
+            open_next(chnid);
+        }
+        else if (len == 0)
+        {
+            fprintf(stdout, "song: %s is over\n", chn_context[chnid].globes.gl_pathv[chn_context[chnid].pos]);
+            open_next(chnid);
+            break;
+        }
+        else
+        {
+            chn_context[chnid].offset += len;
+            break;
+        }
+    }
+    if (len < token)
+    {
+        tokenbt_returntoken(chn_context[chnid].tb, token - len);
+    }
+    return len;
 }

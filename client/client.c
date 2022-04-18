@@ -240,8 +240,10 @@ int main(int argc, char **argv)
             fprintf(stderr, "data is not match!\n");
             continue;
         }
+        printf("recv chnid == %d\n", msg_channel->chnid);
         if (msg_channel->chnid == chosen)
         {
+            printf("recv %d length data\n", len);
             ret = writen(fd[1], msg_channel->data, len - sizeof(msg_channel->chnid));
             if (ret < 0)
             {

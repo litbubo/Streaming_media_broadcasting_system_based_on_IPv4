@@ -60,11 +60,9 @@ int thr_list_create(mlib_listdesc_t *list, int size)
         len = sizeof(desc_list_t) + strlen(list[i].desc);
         desc_list->chnid = list[i].chnid;
         desc_list->deslength = htons(len);
-        strncpy((void *)desc_list->desc, list[i].desc,
-                (totalsize - sizeof(chnid_t) * 2 - sizeof(uint16_t)) - 1);
+        strncpy((void *)desc_list->desc, list[i].desc, strlen(list[i].desc));
         desc_list = (void *)(((char *)desc_list) + len);
     }
-    mlib_freechnlist(list);
     threadpool_addtask(pool, sendlist, info); // 向任务队列添加一个任务
     return 0;
 }

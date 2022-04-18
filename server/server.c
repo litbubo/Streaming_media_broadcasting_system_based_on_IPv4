@@ -19,6 +19,8 @@
 #include "server_conf.h"
 #include "threadpool.h"
 #include "medialib.h"
+#include "tokenbucket.h"
+#include "channel.h"
 
 #include "list.h"
 
@@ -64,6 +66,7 @@ static int socket_init()
 
 int main(int argc, char **argv)
 {
+    int i;
     socket_init();
 
     pool = threadpool_create(5, 20, 20);
@@ -74,7 +77,15 @@ int main(int argc, char **argv)
     /*create programme thread*/
     thr_list_create(list, list_size);
 
-    sleep(50);
+    for(i = 0; i < list_size; i++)
+    {
+        thr_channel_create(list[i].chnid);
+    }
+/*
+    while (1)
+        pause();*/
+    sleep(2);
+    mlib_freechnlist(list);
     threadpool_destroy(pool);
     mlib_freechncontext();
     exit(EXIT_SUCCESS);

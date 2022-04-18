@@ -1,7 +1,7 @@
 CFLAGS+=-Wall -g -I../include
 LDFLAGS+=-pthread
 CC:=gcc
-OBJ:=server.o medialib.o threadpool.o tokenbucket.o list.o
+OBJ:=server.o medialib.o threadpool.o tokenbucket.o list.o channel.o
 all : server
 
 server : $(OBJ)
