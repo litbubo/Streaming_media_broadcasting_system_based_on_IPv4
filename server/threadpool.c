@@ -1,5 +1,3 @@
-#include "Threadpool.h"
-
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,12 +7,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "threadpool.h"
+
 #define NUMSTEP 5               // 线程数操作步长
 #define BUFSIZE 1024
 
 typedef struct Task_t           // 定义任务类型
 {
-    void (*function)(void *, int *);   // 保存添加进来的任务函数
+    void (*function)(void *, volatile int *);   // 保存添加进来的任务函数
     void *arg;                  // 保存任务函数的参数
 } Task_t;
 
@@ -43,7 +43,7 @@ struct ThreadPool_t // 定义线程池类型
 };
 
 /**
- * printStatus ： 统计忙线程数和存活线程数，并可视化打印
+ * printstatus ： 统计忙线程数和存活线程数，并可视化打印
  *
  * 返回值 ： 无
  *
@@ -52,7 +52,7 @@ struct ThreadPool_t // 定义线程池类型
  * 打印样例 ： [ ++++++++++----- ] : busy == 10, live == 15
  *
  */
-static void printStatus(ThreadPool_t *argPool)
+static void printstatus(ThreadPool_t *argPool)
 {
     struct ThreadPool_t *pool = (struct ThreadPool_t *)argPool;
     int numLive, numBusy;
@@ -60,8 +60,8 @@ static void printStatus(ThreadPool_t *argPool)
     char buf[BUFSIZE];
     memset(buf, 0, BUFSIZE);
 
-    numLive = getThreadLive(pool);
-    numBusy = getThreadBusy(pool);
+    numLive = get_thread_live(pool);
+    numBusy = get_thread_busy(pool);
 
     for (i = 0; i < numBusy; i++)
         strcat(buf, "+");
@@ -97,14 +97,14 @@ static void *working(void *arg)
                 {
                     pool->numLive--;
                     pthread_mutex_unlock(&pool->mutexPool);
-                    thread_Exit_unlock(pool); // 线程自杀
+                    threadexit_unlock(pool); // 线程自杀
                 }
             }
         }
         if (pool->shutstatus == -1) // 若线程池已经关闭，线程自杀
         {
             pthread_mutex_unlock(&pool->mutexPool);
-            thread_Exit_unlock(pool);
+            threadexit_unlock(pool);
         }
 
         task.function = pool->taskQueue[pool->queueFront].function;     // 取出任务
@@ -200,7 +200,7 @@ static void *manager(void *arg)
             }
         }
 #ifdef DEBUG
-        printStatus(pool); // 打印线程池中线程信息
+        printstatus(pool); // 打印线程池中线程信息
 #endif // DEBUG
         sched_yield();     // 出让调度器
     }
@@ -208,7 +208,7 @@ static void *manager(void *arg)
 }
 
 /**
- * threadPool_Create ： 线程池创建函数，创建一个线程池
+ * threadpool_create ： 线程池创建函数，创建一个线程池
  *
  * 返回值 ： 失败返回 NULL，成功返回线程池对象地址
  *
@@ -217,7 +217,7 @@ static void *manager(void *arg)
  * 失败打印样例 ： taskQueue malloc failed ...
  *
  */
-ThreadPool_t *threadPool_Create(int min, int max, int queueCapacity)
+ThreadPool_t *threadpool_create(int min, int max, int queueCapacity)
 {
     struct ThreadPool_t *pool = malloc(sizeof(struct ThreadPool_t));
     int i;
@@ -283,14 +283,14 @@ ThreadPool_t *threadPool_Create(int min, int max, int queueCapacity)
 }
 
 /**
- * threadPool_Destroy ： 线程池销毁函数，销毁一个线程池
+ * threadpool_destroy ： 线程池销毁函数，销毁一个线程池
  *
  * 返回值 ： 失败返回 -1，成功返回 0
  *
  * 参数 ： ThreadPool_t *类型，传入需要销毁的线程
  *
  */
-int threadPool_Destroy(ThreadPool_t *argPool)
+int threadpool_destroy(ThreadPool_t *argPool)
 {
     struct ThreadPool_t *pool = (struct ThreadPool_t *)argPool;
     if (pool == NULL)
@@ -327,14 +327,14 @@ int threadPool_Destroy(ThreadPool_t *argPool)
 }
 
 /**
- * threadPool_Addtask ： 任务队列添加任务函数，添加一个任务
+ * threadpool_addtask ： 任务队列添加任务函数，添加一个任务
  *
  * 返回值 ： 失败返回 -1，成功返回 0
  *
  * 参数 ： argPool：需要添加任务的线程池， function：任务函数，arg：任务函数参数
  *
  */
-int threadPool_Addtask(ThreadPool_t *argPool, void (*function)(void *, int*), void *arg)
+int threadpool_addtask(ThreadPool_t *argPool, void (*function)(void *, volatile int*), void *arg)
 {
     struct ThreadPool_t *pool = (struct ThreadPool_t *)argPool;
 
@@ -360,14 +360,14 @@ int threadPool_Addtask(ThreadPool_t *argPool, void (*function)(void *, int*), vo
 }
 
 /**
- * thread_Exit_unlock ： 线程退出函数，并将该线程 ID 从工作者线程数组中删除
+ * threadexit_unlock ： 线程退出函数，并将该线程 ID 从工作者线程数组中删除
  *
  * 返回值 ： 无
  *
  * 参数 ： argPool：ThreadPool_t *类型，传入当前线程所在的线程池
  *
  */
-void thread_Exit_unlock(ThreadPool_t *argPool)
+void threadexit_unlock(ThreadPool_t *argPool)
 {
     struct ThreadPool_t *pool = (struct ThreadPool_t *)argPool;
     pthread_t tmptid = pthread_self();
@@ -386,14 +386,14 @@ void thread_Exit_unlock(ThreadPool_t *argPool)
 }
 
 /**
- * getThreadLive ： 获取线程池中存活线程数
+ * get_thread_live ： 获取线程池中存活线程数
  *
  * 返回值 ： 线程池中存活线程数
  *
  * 参数 ： argPool：ThreadPool_t *类型，传入当前线程所在的线程池
  *
  */
-int getThreadLive(ThreadPool_t *argPool)
+int get_thread_live(ThreadPool_t *argPool)
 {
     struct ThreadPool_t *pool = (struct ThreadPool_t *)argPool;
     int num;
@@ -404,14 +404,14 @@ int getThreadLive(ThreadPool_t *argPool)
 }
 
 /**
- * getThreadBusy ： 获取线程池中忙线程数
+ * get_thread_busy ： 获取线程池中忙线程数
  *
  * 返回值 ： 线程池中忙线程数
  *
  * 参数 ： argPool：ThreadPool_t *类型，传入当前线程所在的线程池
  *
  */
-int getThreadBusy(ThreadPool_t *argPool)
+int get_thread_busy(ThreadPool_t *argPool)
 {
     struct ThreadPool_t *pool = (struct ThreadPool_t *)argPool;
     int num;

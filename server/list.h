@@ -1,6 +1,6 @@
 #ifndef __LIST_H__
 #define __LIST_H__
-#include "Medialib.h"
+#include "medialib.h"
 
 int thr_list_create(mlib_listdesc_t *, int);
 

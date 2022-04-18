@@ -1,6 +1,5 @@
-#include "List.h"
 #include <pthread.h>
-#include "Threadpool.h"
+#include "threadpool.h"
 #include "server_conf.h"
 #include <unistd.h>
 #include <string.h>
@@ -11,13 +10,15 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
+#include "list.h"
+
 typedef struct send_list_t
 {
     int len;
     msg_list_t msg[0];
 } send_list_t;
 
-void sendlist(void *arg, int *shut)
+void sendlist(void *arg, volatile int *shut)
 {
     send_list_t *info = (send_list_t *)arg;
     while (*shut == 0)
@@ -64,6 +65,6 @@ int thr_list_create(mlib_listdesc_t *list, int size)
         desc_list = (void *)(((char *)desc_list) + len);
     }
     mlib_freechnlist(list);
-    threadPool_Addtask(pool, sendlist, info); // 向任务队列添加一个任务
+    threadpool_addtask(pool, sendlist, info); // 向任务队列添加一个任务
     return 0;
 }

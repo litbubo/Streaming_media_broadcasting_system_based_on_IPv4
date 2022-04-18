@@ -4,7 +4,7 @@
 #define DEFAULT_MEDIADIR "../medialib"
 #define DEFAULT_IF "ens33"
 
-#include "Threadpool.h"
+#include "threadpool.h"
 
 enum
 {

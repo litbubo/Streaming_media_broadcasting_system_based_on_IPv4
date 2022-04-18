@@ -1,6 +1,3 @@
-#include "Medialib.h"
-#include "server_conf.h"
-#include "Tokenbucket.h"
 #include <glob.h>
 #include <protocol.h>
 #include <stdio.h>
@@ -9,6 +6,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#include "medialib.h"
+#include "server_conf.h"
+#include "tokenbucket.h"
 
 #define PATHSIZE 4096
 #define NAMESIZE 256

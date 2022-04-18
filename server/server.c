@@ -17,10 +17,10 @@
 #include <net/if.h>
 
 #include "server_conf.h"
-#include "Threadpool.h"
-#include "Medialib.h"
+#include "threadpool.h"
+#include "medialib.h"
 
-#include "List.h"
+#include "list.h"
 
 int serversd;
 ThreadPool_t *pool;
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
 {
     socket_init();
 
-    pool = threadPool_Create(5, 20, 20);
+    pool = threadpool_create(5, 20, 20);
     int list_size;
     // list 频道的描述信息
     // list_size有几个频道
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     thr_list_create(list, list_size);
 
     sleep(50);
-    threadPool_Destroy(pool);
+    threadpool_destroy(pool);
     mlib_freechncontext();
     exit(EXIT_SUCCESS);
 }
