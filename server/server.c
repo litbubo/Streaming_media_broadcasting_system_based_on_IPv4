@@ -40,6 +40,40 @@ server_conf_t server_conf =
 
 static mlib_listdesc_t *list;
 
+static int daemon_init()
+{
+    pid_t pid;
+    int fd;
+    pid = fork();
+    if (pid < 0)
+    {
+        syslog(LOG_ERR, "fork() : %s", strerror(errno));
+        // fprintf(stderr, "fork() : %s\n", strerror(errno));
+        return -1;
+    }
+    else if (pid > 0)
+    {
+        exit(EXIT_SUCCESS);
+    }
+
+    fd = open("/dev/null", O_RDWR);
+    if(fd < 0)
+    {
+        syslog(LOG_ERR, "open() : %s\n", strerror(errno));
+        // fprintf(stderr, "open() : %s\n", strerror(errno));
+        return -1;
+    }
+    dup2(fd, STDIN_FILENO);
+    dup2(fd, STDOUT_FILENO);
+    dup2(fd, STDERR_FILENO);
+    if(fd > STDERR_FILENO)
+        close(fd);
+    chdir("/");
+    umask(0);
+    setsid();
+    return 0;
+}
+
 static void daemon_exit(int s) // 信号捕捉函数，用于推出前清理
 {
     threadpool_destroy(pool);
@@ -89,6 +123,14 @@ int main(int argc, char **argv)
     struct sigaction action;
 
     openlog("netradio", LOG_PID | LOG_PERROR, LOG_DAEMON);
+
+    ret = daemon_init();
+    if(ret < 0) 
+    {
+        syslog(LOG_ERR, "daemon_init() failed ...");
+        // fprintf(stderr, "daemon_init() failed: %s\n");
+        exit(EXIT_FAILURE);
+    }
 
     action.sa_flags = 0;
     sigemptyset(&action.sa_mask);

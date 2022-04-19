@@ -150,8 +150,8 @@ int mlib_getchnlist(mlib_listdesc_t **list, int *size)
         chn_context[i].chnid = -1;
     }
 
-    snprintf(path, PATHSIZE, "%s/*", "../medialib");
-    // snprintf(path,, PATHSIZE, "%s/*", server_conf.media_dir);
+    // snprintf(path, PATHSIZE, "%s/*", "../medialib");
+    snprintf(path, PATHSIZE, "%s/*", server_conf.media_dir);
     ret = glob(path, 0, NULL, &globes);
     if (ret != 0)
     {

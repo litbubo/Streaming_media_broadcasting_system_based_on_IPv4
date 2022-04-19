@@ -1,7 +1,7 @@
 #ifndef __SERVER_CONF_H__
 #define __SERVER_CONF_H__
 
-#define DEFAULT_MEDIADIR "../medialib"
+#define DEFAULT_MEDIADIR "/var/medialib"
 #define DEFAULT_IF "ens33"
 
 #include "threadpool.h"
