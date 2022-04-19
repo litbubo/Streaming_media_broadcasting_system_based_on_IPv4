@@ -16,6 +16,7 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 #include <signal.h>
+#include <syslog.h>
 
 #include "server_conf.h"
 #include "threadpool.h"
@@ -29,12 +30,13 @@ int serversd;
 ThreadPool_t *pool;
 struct sockaddr_in sndaddr;
 
-server_conf_t server_conf = {
-    .rcvport = DEFAULT_RECVPORT,
-    .media_dir = DEFAULT_MEDIADIR,
-    .runmode = RUN_FOREGROUND,
-    .ifname = DEFAULT_IF,
-    .mgroup = DEFAULT_MGROUP};
+server_conf_t server_conf =
+    {
+        .rcvport = DEFAULT_RECVPORT,
+        .media_dir = DEFAULT_MEDIADIR,
+        .runmode = RUN_FOREGROUND,
+        .ifname = DEFAULT_IF,
+        .mgroup = DEFAULT_MGROUP};
 
 static mlib_listdesc_t *list;
 
@@ -43,7 +45,9 @@ static void daemon_exit(int s) // 信号捕捉函数，用于推出前清理
     threadpool_destroy(pool);
     mlib_freechnlist(list);
     mlib_freechncontext();
+    tokenbt_shutdown();
     close(serversd);
+    closelog();
     exit(EXIT_SUCCESS);
 }
 
@@ -55,7 +59,8 @@ static int socket_init()
     serversd = socket(AF_INET, SOCK_DGRAM, 0);
     if (serversd < 0)
     {
-        fprintf(stderr, "socket() : %s\n", strerror(errno));
+        syslog(LOG_ERR, "socket() : %s", strerror(errno));
+        // fprintf(stderr, "socket() : %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -65,7 +70,8 @@ static int socket_init()
     ret = setsockopt(serversd, IPPROTO_IP, IP_MULTICAST_IF, &mreq, sizeof(mreq));
     if (ret < 0)
     {
-        fprintf(stderr, "setsockopt() : %s\n", strerror(errno));
+        syslog(LOG_ERR, "setsockopt() : %s", strerror(errno));
+        // fprintf(stderr, "setsockopt() : %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -82,6 +88,8 @@ int main(int argc, char **argv)
     int list_size;
     struct sigaction action;
 
+    openlog("netradio", LOG_PID | LOG_PERROR, LOG_DAEMON);
+
     action.sa_flags = 0;
     sigemptyset(&action.sa_mask);
     sigaddset(&action.sa_mask, SIGINT);
@@ -97,21 +105,24 @@ int main(int argc, char **argv)
     pool = threadpool_create(5, 20, 20);
     if (pool == NULL)
     {
-        fprintf(stderr, "threadpool_create() : failed ...\n");
+        syslog(LOG_ERR, "threadpool_create() : failed ...");
+        // fprintf(stderr, "threadpool_create() : failed ...\n");
         exit(EXIT_FAILURE);
     }
 
     ret = mlib_getchnlist(&list, &list_size);
     if (ret < 0)
     {
-        fprintf(stderr, "mlib_getchnlist() : failed ...\n");
+        syslog(LOG_ERR, "mlib_getchnlist() : failed ...");
+        //fprintf(stderr, "mlib_getchnlist() : failed ...\n");
         exit(EXIT_FAILURE);
     }
 
     ret = thr_list_create(list, list_size);
     if (ret < 0)
     {
-        fprintf(stderr, "thr_list_create() : failed ...\n");
+        syslog(LOG_ERR, "thr_list_create() : failed ...");
+        // fprintf(stderr, "thr_list_create() : failed ...\n");
         exit(EXIT_FAILURE);
     }
 
@@ -120,7 +131,8 @@ int main(int argc, char **argv)
         ret = thr_channel_create(list[i].chnid);
         if (ret < 0)
         {
-            fprintf(stderr, "thr_channel_create() : failed ...\n");
+            syslog(LOG_ERR, "thr_channel_create() : failed ...");
+            // fprintf(stderr, "thr_channel_create() : failed ...\n");
             exit(EXIT_FAILURE);
         }
     }

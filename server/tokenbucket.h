@@ -17,4 +17,6 @@ int tokenbt_destroy(tokenbt_t *);
 
 int tokenbt_destroy_all();
 
+int tokenbt_shutdown();
+
 #endif // !__TOKENBUCKET_h__

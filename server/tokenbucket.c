@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <signal.h>
+#include <syslog.h>
+
 #include "tokenbucket.h"
 
 struct tokenbt_t
@@ -68,13 +70,14 @@ static void module_unload()
     pthread_cancel(tid);
     pthread_join(tid, NULL);
     tokenbt_destroy_all();
-    fprintf(stdout, "free job is done ...\n");
+    syslog(LOG_INFO, "free job is done ...");
+    // fprintf(stdout, "free job is done ...\n");
 }
 
 static void module_load()
 {
     pthread_create(&tid, NULL, woking, NULL);
-    atexit(module_unload);
+    // atexit(module_unload);
 }
 
 tokenbt_t *tokenbt_init(int cps, int burst)
@@ -99,7 +102,8 @@ tokenbt_t *tokenbt_init(int cps, int burst)
         pthread_mutex_destroy(&tb->mutex);
         pthread_cond_destroy(&tb->cond);
         free(tb);
-        fprintf(stderr, "have not any pool pos...\n");
+        syslog(LOG_ERR, "have not any pool pos...");
+        // fprintf(stderr, "have not any pool pos...\n");
         return NULL;
     }
     tb->pos = pos;
@@ -181,5 +185,11 @@ int tokenbt_destroy_all()
         free(token_pool[i]);
         token_pool[i] = NULL;
     }
+    return 0;
+}
+
+int tokenbt_shutdown()
+{
+    module_unload();
     return 0;
 }

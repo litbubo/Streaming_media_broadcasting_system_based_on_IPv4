@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <syslog.h>
 
 #include "medialib.h"
 #include "server_conf.h"
@@ -52,13 +53,15 @@ static channel_context_t *getpathcontent(const char *path)
     descfd = open(pathbuf, O_RDONLY);
     if (descfd < 0)
     {
-        fprintf(stderr, "this is not a lib ...\n");
+        syslog(LOG_INFO, "%s is not a lib ...", pathbuf);
+        // fprintf(stderr, "this is not a lib ...\n");
         return NULL;
     }
     ret = read(descfd, linebuf, LINEBUFSIZE);
     if (ret == 0)
     {
-        fprintf(stderr, "this haven't anything ...\n");
+        syslog(LOG_INFO, "%s haven't anything ...", pathbuf);
+        // fprintf(stderr, "this haven't anything ...\n");
         close(descfd);
         return NULL;
     }
@@ -67,7 +70,8 @@ static channel_context_t *getpathcontent(const char *path)
     me = malloc(sizeof(channel_context_t));
     if (me == NULL)
     {
-        fprintf(stderr, "malloc() : %s\n", strerror(errno));
+        syslog(LOG_ERR, "malloc() : %s", strerror(errno));
+        // fprintf(stderr, "malloc() : %s\n", strerror(errno));
         return NULL;
     }
     me->desc = strdup(linebuf);
@@ -75,7 +79,8 @@ static channel_context_t *getpathcontent(const char *path)
     me->tb = tokenbt_init(MP3_BITRATE / 8, MP3_BITRATE / 8 * 5);
     if (me->tb == NULL)
     {
-        fprintf(stderr, "tokenbt_init() : failed ...\n");
+        syslog(LOG_ERR, "tokenbt_init() : failed ...");
+        // fprintf(stderr, "tokenbt_init() : failed ...\n");
         free(me);
         return NULL;
     }
@@ -87,7 +92,8 @@ static channel_context_t *getpathcontent(const char *path)
     ret = glob(pathbuf, 0, NULL, &me->globes);
     if (ret != 0)
     {
-        fprintf(stderr, "glob() : failed ...\n");
+        syslog(LOG_ERR, "glob() : failed ...");
+        // fprintf(stderr, "glob() : failed ...\n");
         free(me);
         return NULL;
     }
@@ -97,7 +103,8 @@ static channel_context_t *getpathcontent(const char *path)
     me->fd = open(me->globes.gl_pathv[me->pos], O_RDONLY);
     if (me->fd < 0)
     {
-        fprintf(stderr, "open() : %s\n", strerror(errno));
+        syslog(LOG_ERR, "open() : %s", strerror(errno));
+        // fprintf(stderr, "open() : %s\n", strerror(errno));
         free(me);
         return NULL;
     }
@@ -148,14 +155,16 @@ int mlib_getchnlist(mlib_listdesc_t **list, int *size)
     ret = glob(path, 0, NULL, &globes);
     if (ret != 0)
     {
-        fprintf(stderr, "glob() : failed ...\n");
+        syslog(LOG_ERR, "glob() : failed ...");
+        // fprintf(stderr, "glob() : failed ...\n");
         return -1;
     }
 
     tmp = malloc(sizeof(mlib_listdesc_t) * globes.gl_pathc);
     if (tmp == NULL)
     {
-        fprintf(stderr, "malloc() : %s\n", strerror(errno));
+        syslog(LOG_ERR, "malloc() : %s", strerror(errno));
+        // fprintf(stderr, "malloc() : %s\n", strerror(errno));
         return -1;
     }
     for (i = 0; i < globes.gl_pathc; i++)
@@ -173,7 +182,8 @@ int mlib_getchnlist(mlib_listdesc_t **list, int *size)
     *list = realloc(tmp, sizeof(mlib_listdesc_t) * total_chn);
     if (list == NULL)
     {
-        fprintf(stderr, "realloc() : %s\n", strerror(errno));
+        syslog(LOG_ERR, "realloc() : %s", strerror(errno));
+        // fprintf(stderr, "realloc() : %s\n", strerror(errno));
         return -1;
     }
     *size = total_chn;
@@ -218,12 +228,14 @@ ssize_t mlib_readchn(chnid_t chnid, void *buf, size_t size)
         {
             if (errno == EINTR)
                 return 0;
-            fprintf(stderr, "pread() : %s\n", strerror(errno));
+            syslog(LOG_ERR, "pread() : %s", strerror(errno));
+            // fprintf(stderr, "pread() : %s\n", strerror(errno));
             open_next(chnid);
         }
         else if (len == 0)
         {
-            fprintf(stdout, "song: %s is over\n", chn_context[chnid].globes.gl_pathv[chn_context[chnid].pos]);
+            syslog(LOG_INFO, "song: %s is over", chn_context[chnid].globes.gl_pathv[chn_context[chnid].pos]);
+            // fprintf(stdout, "song: %s is over\n", chn_context[chnid].globes.gl_pathv[chn_context[chnid].pos]);
             open_next(chnid);
             break;
         }

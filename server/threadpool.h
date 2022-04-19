@@ -1,7 +1,7 @@
 #ifndef __THREADPOOL_H__
 #define __THREADPOOL_H__
 
-#define DEBUG                               // 定义宏，DEBUG模式，打印尽可能多的的log信息，注释则不打印
+// #define DEBUG                               // 定义宏，DEBUG模式，打印尽可能多的的log信息，注释则不打印
 
 typedef void ThreadPool_t;                  // 对外隐藏ThreadPool_t内部实现
 

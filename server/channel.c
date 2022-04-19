@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <errno.h>
+#include <syslog.h>
 
 #include "channel.h"
 #include "server_conf.h"
@@ -23,7 +24,8 @@ static void sendchannel(void *arg, volatile int *shut)
         memset(context->data, 0, MAX_CHANNEL_DATA - sizeof(chnid_t));
         len = mlib_readchn(context->chnid, context->data, MAX_CHANNEL_DATA - sizeof(chnid_t));
         len = sendto(serversd, context, len + sizeof(chnid_t), 0, (void *)&sndaddr, sizeof(sndaddr));
-        fprintf(stdout, "channel thread sendto %d bytes, pool status is %d\n", len, *shut);
+        syslog(LOG_INFO, "%7s thread sendto %5d bytes, pool status is %d", "channel", len, *shut);
+        // fprintf(stdout, "channel thread sendto %d bytes, pool status is %d\n", len, *shut);
     }
 }
 
@@ -33,7 +35,8 @@ int thr_channel_create(chnid_t chnid)
     context = malloc(MAX_CHANNEL_DATA);
     if (context == NULL)
     {
-        fprintf(stderr, "malloc() : %s\n", strerror(errno));
+        syslog(LOG_ERR, "malloc() : %s", strerror(errno));
+        // fprintf(stderr, "malloc() : %s\n", strerror(errno));
         return -1;
     }
     memset(context, 0, MAX_CHANNEL_DATA);

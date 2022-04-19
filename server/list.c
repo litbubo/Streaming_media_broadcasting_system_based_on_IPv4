@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <errno.h>
+#include <syslog.h>
 
 #include "list.h"
 
@@ -26,7 +27,8 @@ void sendlist(void *arg, volatile int *shut)
     while (*shut == 0)
     {
         len = sendto(serversd, info->msg, info->len, 0, (void *)&sndaddr, sizeof(sndaddr));
-        fprintf(stdout, "list    thread sendto %d bytes, pool status is %d\n", len, *shut);
+        syslog(LOG_INFO, "%7s thread sendto %5d bytes, pool status is %d", "list", len, *shut);
+        // fprintf(stdout, "list    thread sendto %d bytes, pool status is %d\n", len, *shut);
         sleep(1);
     }
 }
@@ -48,7 +50,8 @@ int thr_list_create(mlib_listdesc_t *list, int size)
     info = malloc(totalsize + sizeof(int));
     if (info == NULL)
     {
-        fprintf(stderr, "malloc() : %s\n", strerror(errno));
+        syslog(LOG_ERR, "malloc() : %s", strerror(errno));
+        // fprintf(stderr, "malloc() : %s\n", strerror(errno));
         return -1;
     }
     memset(info, 0, totalsize + sizeof(int));

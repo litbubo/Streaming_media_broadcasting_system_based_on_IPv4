@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+#include <syslog.h>
+
 #include "threadpool.h"
 
 #define NUMSTEP 5               // 线程数操作步长
@@ -137,6 +139,8 @@ static void *working(void *arg)
 
         free(task.arg); // 释放任务资源
 
+        syslog(LOG_INFO, "thread [%ld] is free successful...", pthread_self());
+        
 #ifdef DEBUG
         fprintf(stdout, "[thread = %ld] is free successful...\n", pthread_self());
 #endif // DEBUG
@@ -236,14 +240,16 @@ ThreadPool_t *threadpool_create(int min, int max, int queueCapacity)
     { // do while 实现 goto 跳转
         if (pool == NULL)
         {
-            fprintf(stderr, "threadpool malloc() : %s\n", strerror(errno));
+            syslog(LOG_ERR, "threadpool malloc() : %s", strerror(errno));
+            // fprintf(stderr, "threadpool malloc() : %s\n", strerror(errno));
             break; // 申请内存失败就跳过剩下的初始化
         }
 
         pool->taskQueue = malloc(sizeof(Task_t) * queueCapacity);
         if (pool->taskQueue == NULL)
         {
-            fprintf(stderr, "taskQueue malloc() : %s\n", strerror(errno));
+            syslog(LOG_ERR, "taskQueue malloc() : %s", strerror(errno));
+            // fprintf(stderr, "taskQueue malloc() : %s\n", strerror(errno));
             break;
         }
         memset(pool->taskQueue, 0, sizeof(Task_t) * queueCapacity);
@@ -255,7 +261,8 @@ ThreadPool_t *threadpool_create(int min, int max, int queueCapacity)
         pool->workerIDs = malloc(sizeof(pthread_t) * max);
         if (pool->workerIDs == NULL)
         {
-            fprintf(stderr, "workerIDs malloc() : %s\n", strerror(errno));
+            syslog(LOG_ERR, "workerIDs malloc() : %s", strerror(errno));
+            // fprintf(stderr, "workerIDs malloc() : %s\n", strerror(errno));
             break;
         }
         memset(pool->workerIDs, 0, sizeof(pthread_t) * max);
@@ -270,7 +277,8 @@ ThreadPool_t *threadpool_create(int min, int max, int queueCapacity)
             pthread_cond_init(&pool->notFull, NULL) != 0 ||
             pthread_cond_init(&pool->notEmpty, NULL) != 0)
         {
-            fprintf(stderr, "lock init failed ...\n");
+            syslog(LOG_ERR, "lock init failed ...");
+            // fprintf(stderr, "lock init failed ...\n");
             break;
         }
         pool->shutstatus = 0;                                  // 开启线程池
@@ -307,7 +315,8 @@ int threadpool_destroy(ThreadPool_t *argPool)
     struct ThreadPool_t *pool = (struct ThreadPool_t *)argPool;
     if (pool == NULL)
     {
-        fprintf(stderr, "thread pool is not existed ...\n");
+        syslog(LOG_ERR, "thread pool is not existed ...");
+        // fprintf(stderr, "thread pool is not existed ...\n");
         return -1;
     }
 
@@ -329,6 +338,8 @@ int threadpool_destroy(ThreadPool_t *argPool)
     if (pool != NULL)
         free(pool);
     pool = NULL;
+
+    syslog(LOG_INFO, "thread pool is going to be destroyed...");
 #ifdef DEBUG
     fprintf(stdout, "thread pool is going to be destroyed...\n");
 #endif // DEBUG
@@ -354,7 +365,8 @@ int threadpool_addtask(ThreadPool_t *argPool, void (*function)(void *, volatile 
     }
     if (pool->shutstatus == -1)
     {
-        fprintf(stderr, "thread pool has been shutdown ...\n");
+        syslog(LOG_INFO, "thread pool has been shutdown ...");
+        // fprintf(stderr, "thread pool has been shutdown ...\n");
         pthread_mutex_unlock(&pool->mutexPool);
         return -1;
     }
@@ -388,6 +400,7 @@ void threadexit_unlock(ThreadPool_t *argPool)
             break;
         }
     }
+    syslog(LOG_INFO, "thread [%ld] is going to exit...", tmptid);
 #ifdef DEBUG
     fprintf(stdout, "[thread = %ld] is going to exit...\n", tmptid);
 #endif // DEBUG
