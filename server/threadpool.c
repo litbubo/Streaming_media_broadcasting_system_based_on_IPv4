@@ -6,7 +6,8 @@
 #include <sys/select.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+#include <errno.h>
+#include <signal.h>
 #include "threadpool.h"
 
 #define NUMSTEP 5               // 线程数操作步长
@@ -42,6 +43,7 @@ struct ThreadPool_t // 定义线程池类型
     volatile int shutstatus;             // 线程池状态，0 打开，-1 关闭
 };
 
+#ifdef DEBUG
 /**
  * printstatus ： 统计忙线程数和存活线程数，并可视化打印
  *
@@ -69,6 +71,7 @@ static void printstatus(ThreadPool_t *argPool)
         strcat(buf, "-");
     fprintf(stdout, "[ %s ] : busy == %d, live == %d\n", buf, numBusy, numLive);
 }
+#endif // DEBUG
 
 /**
  * working ： 工作者线程任务函数，负责从任务队列中取出任务并执行
@@ -84,6 +87,10 @@ static void *working(void *arg)
 {
     struct ThreadPool_t *pool = (struct ThreadPool_t *)arg;
     Task_t task;
+    sigset_t set;
+
+    sigfillset(&set);
+    sigprocmask(SIG_BLOCK, &set, NULL);
     while (1)
     {
         pthread_mutex_lock(&pool->mutexPool); // 对线程池加锁
@@ -158,11 +165,15 @@ static void *manager(void *arg)
     struct timeval tv;
     int numLive, numBusy, queueSize;
     int i, count;
+    sigset_t set;
+
+    sigfillset(&set);
+    sigprocmask(SIG_BLOCK, &set, NULL);
     while (pool->shutstatus == 0)
     {
-        tv.tv_sec = 2;                    // 定时500ms，可根据实际场景改变
-        tv.tv_usec = 0;              // ！！每次定时都需要重新设定数值！！
-        select(0, NULL, NULL, NULL, &tv); // select作为延时函数，替换sleep，保证线程安全
+        tv.tv_sec = 2;                      // 定时2s，可根据实际场景改变
+        tv.tv_usec = 500000;                     // ！！每次定时都需要重新设定数值！！
+        select(0, NULL, NULL, NULL, &tv);   // select作为延时函数，替换sleep，保证线程安全
 
         pthread_mutex_lock(&pool->mutexPool);
         numLive = pool->numLive;
@@ -225,14 +236,14 @@ ThreadPool_t *threadpool_create(int min, int max, int queueCapacity)
     { // do while 实现 goto 跳转
         if (pool == NULL)
         {
-            fprintf(stderr, "threadpool malloc failed ...\n");
+            fprintf(stderr, "threadpool malloc() : %s\n", strerror(errno));
             break; // 申请内存失败就跳过剩下的初始化
         }
 
         pool->taskQueue = malloc(sizeof(Task_t) * queueCapacity);
         if (pool->taskQueue == NULL)
         {
-            fprintf(stderr, "taskQueue malloc failed ...\n");
+            fprintf(stderr, "taskQueue malloc() : %s\n", strerror(errno));
             break;
         }
         memset(pool->taskQueue, 0, sizeof(Task_t) * queueCapacity);
@@ -244,7 +255,7 @@ ThreadPool_t *threadpool_create(int min, int max, int queueCapacity)
         pool->workerIDs = malloc(sizeof(pthread_t) * max);
         if (pool->workerIDs == NULL)
         {
-            fprintf(stderr, "workerIDs malloc failed ...\n");
+            fprintf(stderr, "workerIDs malloc() : %s\n", strerror(errno));
             break;
         }
         memset(pool->workerIDs, 0, sizeof(pthread_t) * max);
@@ -292,17 +303,18 @@ ThreadPool_t *threadpool_create(int min, int max, int queueCapacity)
  */
 int threadpool_destroy(ThreadPool_t *argPool)
 {
+    int i;
     struct ThreadPool_t *pool = (struct ThreadPool_t *)argPool;
     if (pool == NULL)
     {
-        fprintf(stderr, "thread pool is not existed...\n");
+        fprintf(stderr, "thread pool is not existed ...\n");
         return -1;
     }
 
     pool->shutstatus = -1;
-    sleep(1);
+    sleep(2);
     pthread_join(pool->managerID, NULL);
-    for (int i = 0; i < pool->numLive; i++)
+    for (i = 0; i < pool->numLive; i++)
     {
         pthread_cond_signal(&pool->notEmpty); // 唤醒所有存活线程，让其自杀
     }
@@ -342,7 +354,7 @@ int threadpool_addtask(ThreadPool_t *argPool, void (*function)(void *, volatile 
     }
     if (pool->shutstatus == -1)
     {
-        fprintf(stderr, "thread pool has been shutdown...\n");
+        fprintf(stderr, "thread pool has been shutdown ...\n");
         pthread_mutex_unlock(&pool->mutexPool);
         return -1;
     }

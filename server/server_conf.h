@@ -8,7 +8,7 @@
 
 enum
 {
-    RUN_DAEMON,
+    RUN_DAEMON = 0,
     RUN_FOREGROUND
 };
 
@@ -25,4 +25,5 @@ extern server_conf_t server_conf;
 extern int serversd;
 extern struct sockaddr_in sndaddr;
 extern ThreadPool_t *pool;
+
 #endif // !__SERVER_CONF_H__

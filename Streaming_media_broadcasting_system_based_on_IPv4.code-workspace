@@ -27,7 +27,8 @@
 			"list.h": "c",
 			"server_conf.h": "c",
 			"threadpool.h": "c",
-			"medialib.h": "c"
+			"medialib.h": "c",
+			"cerrno": "c"
 		}
 	}
 }

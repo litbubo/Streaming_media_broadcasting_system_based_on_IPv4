@@ -11,10 +11,10 @@ int threadpool_addtask(ThreadPool_t *, void (*)(void *, volatile int *), void *)
 
 int threadpool_destroy(ThreadPool_t *);                                 // 销毁一个线程池
 
-void threadexit_unlock(ThreadPool_t *);                                // 线程退出函数
+void threadexit_unlock(ThreadPool_t *);                                 // 线程退出函数
 
-int get_thread_live(ThreadPool_t *);                                      // 获得线程池中的存活线程数
+int get_thread_live(ThreadPool_t *);                                    // 获得线程池中的存活线程数
 
-int get_thread_busy(ThreadPool_t *);                                      // 获得线程池中的忙线程数
+int get_thread_busy(ThreadPool_t *);                                    // 获得线程池中的忙线程数
 
 #endif

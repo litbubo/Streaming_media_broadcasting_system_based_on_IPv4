@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <errno.h>
 
 #include "list.h"
 
@@ -20,11 +21,12 @@ typedef struct send_list_t
 
 void sendlist(void *arg, volatile int *shut)
 {
+    int len;
     send_list_t *info = (send_list_t *)arg;
     while (*shut == 0)
     {
-        sendto(serversd, info->msg, info->len, 0, (void *)&sndaddr, sizeof(sndaddr));
-        printf("++++%d\n", *shut);
+        len = sendto(serversd, info->msg, info->len, 0, (void *)&sndaddr, sizeof(sndaddr));
+        fprintf(stdout, "list    thread sendto %d bytes, pool status is %d\n", len, *shut);
         sleep(1);
     }
 }
@@ -37,17 +39,18 @@ int thr_list_create(mlib_listdesc_t *list, int size)
     desc_list_t *desc_list;
     send_list_t *info;
 
-    for (int i = 0; i < size; i++)
-    {
-        printf("chnid == %d, desc == %s\n", list[i].chnid, list[i].desc);
-    }
-
     totalsize = sizeof(chnid_t);
     for (int i = 0; i < size; i++)
     {
         totalsize += sizeof(desc_list_t) + strlen(list[i].desc);
     }
+
     info = malloc(totalsize + sizeof(int));
+    if (info == NULL)
+    {
+        fprintf(stderr, "malloc() : %s\n", strerror(errno));
+        return -1;
+    }
     memset(info, 0, totalsize + sizeof(int));
     info->len = totalsize;
     msg_list = info->msg;

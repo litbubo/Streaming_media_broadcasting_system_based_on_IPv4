@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-
+#include <signal.h>
 #include "tokenbucket.h"
 
 struct tokenbt_t
@@ -25,6 +25,10 @@ static void *woking(void *arg)
 {
     int i;
     struct timeval tv;
+    sigset_t set;
+
+    sigfillset(&set);
+    sigprocmask(SIG_BLOCK, &set, NULL);
     while (1)
     {
         pthread_mutex_lock(&mutex_pool);

@@ -189,6 +189,10 @@ int main(int argc, char **argv)
     }
 
     msg_list = malloc(MAX_LISTCHN_DATA);
+    if(msg_list == NULL)
+    {
+        fprintf(stderr, "malloc() : %s\n", strerror(errno));
+    }
     socklen = sizeof(struct sockaddr_in);
     while (1)
     {
@@ -225,6 +229,10 @@ int main(int argc, char **argv)
     }
 
     msg_channel = malloc(MAX_CHANNEL_DATA);
+    if(msg_channel == NULL)
+    {
+        fprintf(stderr, "malloc() : %s\n", strerror(errno));
+    }
     socklen = sizeof(struct sockaddr_in);
     while (1)
     {
@@ -240,10 +248,9 @@ int main(int argc, char **argv)
             fprintf(stderr, "data is not match!\n");
             continue;
         }
-        printf("recv chnid == %d\n", msg_channel->chnid);
         if (msg_channel->chnid == chosen)
         {
-            printf("recv %d length data\n", len);
+            fprintf(stdout, "recv %d length data!\n", len);
             ret = writen(fd[1], msg_channel->data, len - sizeof(msg_channel->chnid));
             if (ret < 0)
             {
