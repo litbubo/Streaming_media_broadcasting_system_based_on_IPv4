@@ -124,6 +124,7 @@ int main(int argc, char **argv)
 
     openlog("netradio", LOG_PID | LOG_PERROR, LOG_DAEMON);
 
+    /* test push */
     ret = daemon_init();
     if(ret < 0) 
     {
