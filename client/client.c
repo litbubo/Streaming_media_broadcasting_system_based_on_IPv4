@@ -1,17 +1,18 @@
 #include <protocol.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <net/if.h>
+#include <errno.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
-#include <net/if.h>
-#include <errno.h>
-#include <signal.h>
 
 #include "client.h"
 
@@ -22,22 +23,21 @@ int sfd;
 client_conf_t conf = // client 配置
     {
         .mgroup     = DEFAULT_MGROUP,
-        .recvport   = DEFAULT_RECVPORT,
+        .revport    = DEFAULT_RECVPORT,
         .playercmd  = DEFAULT_PALYERCMD
     };
 
 struct option opt[] =
     {
-        {"port"  ,  required_argument, NULL, 'P'},
-        {"mgroup",  required_argument, NULL, 'M'},
-        {"player",  required_argument, NULL, 'p'},
-        {"help"  ,  no_argument      , NULL, 'H'}
-    };
+        {"mgroup", required_argument, NULL, 'M'},
+        {"port"  , required_argument, NULL, 'P'},
+        {"player", required_argument, NULL, 'p'},
+        {"help"  , no_argument      , NULL, 'H'}};
 
 static void print_help()
 {
-    printf("-P --port   自定义接收端口  \n");
     printf("-M --mgroup 自定义多播组地址\n");
+    printf("-P --port   自定义接收端口  \n");
     printf("-p --player 自定义音乐解码器\n");
     printf("-H --help   显示帮助       \n");
 }
@@ -79,16 +79,16 @@ int main(int argc, char **argv)
 {
     int arg;
     int ret;
-    int fd[2];
+    int len;
     int val;
     int chosen;
+    int fd[2];
     char ip[20];
-    uint64_t receive_buf_size = 20 * 1024 * 1024; // 20MB
     pid_t pid;
+    socklen_t socklen;
+    uint64_t receive_buf_size = 20 * 1024 * 1024; // 20MB
     struct ip_mreqn group;
     struct sockaddr_in addr, list_addr, data_addr;
-    socklen_t socklen;
-    int len;
     struct sigaction action;
 
     while (1)
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
         switch (arg)
         {
         case 'P':
-            conf.recvport = optarg;
+            conf.revport = optarg;
             break;
         case 'M':
             conf.mgroup = optarg;
@@ -117,7 +117,8 @@ int main(int argc, char **argv)
             break;
         }
     }
-
+    fprintf(stdout, "当前配置：\n多播组IP:\t%s\n端口：\t\t%s\n播放器：\t%s\n",
+            conf.mgroup, conf.revport, conf.playercmd);
     ret = pipe(fd);
     if (ret < 0)
     {
@@ -156,7 +157,7 @@ int main(int argc, char **argv)
 
     addr.sin_family = AF_INET;
     inet_pton(AF_INET, "0.0.0.0", &addr.sin_addr);
-    addr.sin_port = htons(atoi(conf.recvport));
+    addr.sin_port = htons(atoi(conf.revport));
     ret = bind(sfd, (void *)&addr, sizeof(addr)); // 绑定本地 IP ，端口
     if (ret < 0)
     {
@@ -189,7 +190,7 @@ int main(int argc, char **argv)
     }
 
     msg_list = malloc(MAX_LISTCHN_DATA);
-    if(msg_list == NULL)
+    if (msg_list == NULL)
     {
         fprintf(stderr, "malloc() : %s\n", strerror(errno));
     }
@@ -218,6 +219,7 @@ int main(int argc, char **argv)
     }
     free(msg_list);
     msg_list = NULL;
+    fprintf(stdout, "请输入收听的频道号码，按回车结束！\n");
     while (1)
     {
         fflush(NULL);
@@ -229,7 +231,7 @@ int main(int argc, char **argv)
     }
 
     msg_channel = malloc(MAX_CHANNEL_DATA);
-    if(msg_channel == NULL)
+    if (msg_channel == NULL)
     {
         fprintf(stderr, "malloc() : %s\n", strerror(errno));
     }

@@ -1,22 +1,21 @@
+#include <protocol.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <protocol.h>
 #include <unistd.h>
 #include <syslog.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <error.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
+#include <getopt.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <net/if.h>
-#include <signal.h>
-#include <syslog.h>
 
 #include "server_conf.h"
 #include "threadpool.h"
@@ -29,16 +28,36 @@
 int serversd;
 ThreadPool_t *pool;
 struct sockaddr_in sndaddr;
+static mlib_listdesc_t *list;
 
 server_conf_t server_conf =
     {
-        .rcvport = DEFAULT_RECVPORT,
-        .media_dir = DEFAULT_MEDIADIR,
-        .runmode = RUN_FOREGROUND,
-        .ifname = DEFAULT_IF,
-        .mgroup = DEFAULT_MGROUP};
+        .media_dir  = DEFAULT_MEDIADIR,
+        .rcvport    = DEFAULT_RECVPORT,
+        .runmode    = RUN_FOREGROUND,
+        .ifname     = DEFAULT_IF,
+        .mgroup     = DEFAULT_MGROUP
+    };
 
-static mlib_listdesc_t *list;
+struct option opt[] =
+    {
+        {"mgroup"  , required_argument, NULL, 'M'},
+        {"port"    , required_argument, NULL, 'P'},
+        {"mediadir", required_argument, NULL, 'D'},
+        {"runmode" , required_argument, NULL, 'R'},
+        {"ifname"  , required_argument, NULL, 'I'},
+        {"help"    , no_argument      , NULL, 'H'}
+    };
+
+static void print_help()
+{
+    printf("-M --mgroup     自定义多播组地址\n");
+    printf("-P --port       自定义发送端口  \n");
+    printf("-D --mediadir   自定义媒体库路径\n");
+    printf("-R --runmode    自定义运行模式  \n");
+    printf("-I --ifname     自定义网卡名称  \n");
+    printf("-H --help       显示帮助       \n");
+}
 
 static int daemon_init()
 {
@@ -57,7 +76,7 @@ static int daemon_init()
     }
 
     fd = open("/dev/null", O_RDWR);
-    if(fd < 0)
+    if (fd < 0)
     {
         syslog(LOG_ERR, "open() : %s\n", strerror(errno));
         // fprintf(stderr, "open() : %s\n", strerror(errno));
@@ -66,7 +85,7 @@ static int daemon_init()
     dup2(fd, STDIN_FILENO);
     dup2(fd, STDOUT_FILENO);
     dup2(fd, STDERR_FILENO);
-    if(fd > STDERR_FILENO)
+    if (fd > STDERR_FILENO)
         close(fd);
     chdir("/");
     umask(0);
@@ -119,18 +138,77 @@ static int socket_init()
 int main(int argc, char **argv)
 {
     int i, ret;
+    int arg;
     int list_size;
     struct sigaction action;
 
     openlog("netradio", LOG_PID | LOG_PERROR, LOG_DAEMON);
 
-    /* test push */
-    ret = daemon_init();
-    if(ret < 0) 
+    while (1)
     {
-        syslog(LOG_ERR, "daemon_init() failed ...");
-        // fprintf(stderr, "daemon_init() failed: %s\n");
-        exit(EXIT_FAILURE);
+        arg = getopt_long(argc, argv, "M:P:D:R:I:H", opt, NULL);
+        if (arg == -1)
+            break;
+        switch (arg)
+        {
+        case 'M':
+            server_conf.mgroup = optarg;
+            break;
+        case 'P':
+            server_conf.rcvport = optarg;
+            break;
+        case 'D':
+            server_conf.media_dir = optarg;
+            break;
+        case 'R':
+            if (atoi(optarg) == 1 || atoi(optarg) == 0)
+            {
+                server_conf.runmode = (enum RNUMODE)atoi(optarg);
+            }
+            else
+            {
+                syslog(LOG_ERR, "参数错误！详见");
+                // fprintf(stderr, "参数错误！详见\n");
+                print_help();
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 'I':
+            server_conf.ifname = optarg;
+            break;
+        case 'H':
+            print_help();
+            break;
+        default:
+            syslog(LOG_ERR, "参数错误！详见");
+            // fprintf(stderr, "参数错误！详见\n");
+            print_help();
+            exit(EXIT_FAILURE);
+            break;
+        }
+    }
+    syslog(LOG_INFO, "当前配置：\n多播组IP：\t%s\n端口：\t\t%s\n媒体库路径：\t%s\n运行模式：\t%d\n网卡名：\t%s\n",
+           server_conf.mgroup,
+           server_conf.rcvport,
+           server_conf.media_dir,
+           server_conf.runmode,
+           server_conf.ifname);
+    /* fprintf(stdout, "当前配置：\n多播组IP：\t%s\n端口：\t\t%s\n媒体库路径：\t%s\n运行模式：\t%d\n网卡名：\t%s\n",
+            server_conf.mgroup,
+            server_conf.rcvport,
+            server_conf.media_dir,
+            server_conf.runmode,
+            server_conf.ifname); */
+
+    if (server_conf.runmode == RUN_DAEMON)
+    {
+        ret = daemon_init();
+        if (ret < 0)
+        {
+            syslog(LOG_ERR, "daemon_init() failed ...");
+            // fprintf(stderr, "daemon_init() failed: %s\n");
+            exit(EXIT_FAILURE);
+        }
     }
 
     action.sa_flags = 0;
@@ -157,7 +235,7 @@ int main(int argc, char **argv)
     if (ret < 0)
     {
         syslog(LOG_ERR, "mlib_getchnlist() : failed ...");
-        //fprintf(stderr, "mlib_getchnlist() : failed ...\n");
+        // fprintf(stderr, "mlib_getchnlist() : failed ...\n");
         exit(EXIT_FAILURE);
     }
 

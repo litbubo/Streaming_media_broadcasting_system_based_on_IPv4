@@ -1,14 +1,14 @@
-#include <glob.h>
 #include <protocol.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <glob.h>
 #include <syslog.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "medialib.h"
 #include "server_conf.h"

@@ -10,8 +10,8 @@
 typedef struct client_conf_t
 {
     char *mgroup;
-    char *recvport;
+    char *revport;
     char *playercmd;
-}client_conf_t;
+} client_conf_t;
 
 #endif // !__CLIENT_H__

@@ -6,7 +6,7 @@
 
 #include "threadpool.h"
 
-enum
+enum RNUMODE
 {
     RUN_DAEMON = 0,
     RUN_FOREGROUND
@@ -14,10 +14,10 @@ enum
 
 typedef struct server_conf_t
 {
-    char *rcvport;
     char *mgroup;
+    char *rcvport;
     char *media_dir;
-    char runmode;
+    enum RNUMODE runmode;
     char *ifname;
 } server_conf_t;
 

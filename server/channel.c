@@ -1,15 +1,13 @@
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <unistd.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
 #include <errno.h>
 #include <syslog.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 
 #include "channel.h"
 #include "server_conf.h"
