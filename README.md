@@ -18,13 +18,13 @@ Streaming media broadcasting system based on IPv4. It is written in C language a
 
 ## 系统框架
 
-![Image1](https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4/blob/main/%23mdimage/%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%A1%86%E6%9E%B6.png)
+![Image1](https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4/blob/main/.mdimage/Image1.png)
 
 ​																										服务端框架
 
 ------
 
-![Image2](https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4/blob/main/%23mdimage/%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%A1%86%E6%9E%B6.jpg)
+![Image2](https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4/blob/main/.mdimage/Image2.jpg)
 
 ​																											客户端框架
 
@@ -45,9 +45,14 @@ Streaming_media_broadcasting_system_based_on_IPv4/
 │   │   ├── 世界这么大还是遇见你.mp3
 │   │   └── 起风了.mp3
 │   ├── ch2
-│   │   └── desc.txt
-│   └── ch3
-│       └── desc.txt
+│   │   ├── desc.txt
+│   │   ├── 你一定要幸福.mp3
+│   │   └── 你笑起来真好看.mp3
+│   ├── ch3
+│   │   ├── desc.txt
+│   │   ├── Summertime Sadness.mp3
+│   │   └── 学猫叫.mp3
+│   └── ch4
 ├── server
 │   ├── channel.c
 │   ├── channel.h
@@ -62,10 +67,6 @@ Streaming_media_broadcasting_system_based_on_IPv4/
 │   ├── threadpool.h
 │   ├── tokenbucket.c
 │   └── tokenbucket.h
-├── test
-│   ├── test_media.c
-│   ├── test_pool.c
-│   └── test_token.c
 ├── README.md
 ├── LICENSE
 └── Streaming_media_broadcasting_system_based_on_IPv4.code-workspace
@@ -102,7 +103,7 @@ $ ./start.sh  # 启动客户端，为防止丢帧，首次启动务必使用此�
 
 ## 运行效果
 
-![Image3](https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4/blob/main/%23mdimage/%E8%BF%90%E8%A1%8C%E6%88%AA%E5%9B%BE.png)
+![Image3](https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4/blob/main/.mdimage/Image3.png)
 
 ## 技术栈
 
