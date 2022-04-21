@@ -134,5 +134,5 @@ $ ./start.sh  # 启动客户端，为防止丢帧，首次启动务必使用此�
 
 配套课程
 
-[史上最强最细腻的linux嵌入式C语言学习教程【李慧芹老师】]([史上最强最细腻的linux嵌入式C语言学习教程【李慧芹老师】_哔哩哔哩_bilibili](https://www.bilibili.com/video/BV18p4y167Md))
+[史上最强最细腻的linux嵌入式C语言学习教程【李慧芹老师】](https://www.bilibili.com/video/BV18p4y167Md)
 
