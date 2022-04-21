@@ -24,13 +24,13 @@ Streaming media broadcasting system based on IPv4. It is written in C language a
 
 ## 系统框架
 
-<img src="#mdimage/服务端框架.png" style="zoom:60%;" />
+![](#mdimage/服务端框架.png)
 
 ​																										服务端框架
 
 ------
 
-<img src="#mdimage/客户端框架.jpg" style="zoom: 80%;" />
+![](#mdimage/客户端框架.jpg)
 
 ​																											客户端框架
 
