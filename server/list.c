@@ -42,7 +42,7 @@ int thr_list_create(mlib_listdesc_t *list, int size)
     send_list_t *info;
 
     totalsize = sizeof(chnid_t);
-    for (int i = 0; i < size; i++)
+    for (i = 0; i < size; i++)
     {
         totalsize += sizeof(desc_list_t) + strlen(list[i].desc);
     }

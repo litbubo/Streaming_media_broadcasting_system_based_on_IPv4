@@ -390,9 +390,10 @@ int threadpool_addtask(ThreadPool_t *argPool, void (*function)(void *, volatile 
  */
 void threadexit_unlock(ThreadPool_t *argPool)
 {
+    int i;
     struct ThreadPool_t *pool = (struct ThreadPool_t *)argPool;
     pthread_t tmptid = pthread_self();
-    for (int i = 0; i < pool->numMax; i++)
+    for (i = 0; i < pool->numMax; i++)
     {
         if (pool->workerIDs[i] == tmptid)
         {
