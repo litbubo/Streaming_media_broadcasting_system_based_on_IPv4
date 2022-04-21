@@ -18,13 +18,13 @@ Streaming media broadcasting system based on IPv4. It is written in C language a
 
 ## 系统框架
 
-![](https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4/blob/main/%23mdimage/%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%A1%86%E6%9E%B6.png)
+![Image1](https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4/blob/main/%23mdimage/%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%A1%86%E6%9E%B6.png)
 
 ​																										服务端框架
 
 ------
 
-![](https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4/blob/main/%23mdimage/%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%A1%86%E6%9E%B6.jpg)
+![Image2](https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4/blob/main/%23mdimage/%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%A1%86%E6%9E%B6.jpg)
 
 ​																											客户端框架
 
@@ -102,7 +102,7 @@ $ ./start.sh  # 启动客户端，为防止丢帧，首次启动务必使用此�
 
 ## 运行效果
 
-![](https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4/blob/main/%23mdimage/%E8%BF%90%E8%A1%8C%E6%88%AA%E5%9B%BE.png)
+![Image3](https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4/blob/main/%23mdimage/%E8%BF%90%E8%A1%8C%E6%88%AA%E5%9B%BE.png)
 
 ## 技术栈
 
