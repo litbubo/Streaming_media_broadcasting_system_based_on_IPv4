@@ -13,6 +13,14 @@
 #include "server_conf.h"
 #include "medialib.h"
 
+
+/*
+ * @name            : sendchannel
+ * @description		: 读取媒体库中流媒体的内容并发送
+ * @param - arg     : msg_channel_t类型
+ * @param - shut    : 线程池当前开启状态
+ * @return 			: 无
+ */
 static void sendchannel(void *arg, volatile int *shut)
 {
     msg_channel_t *context = (msg_channel_t *)arg;
@@ -27,10 +35,16 @@ static void sendchannel(void *arg, volatile int *shut)
     }
 }
 
+/*
+ * @name            : thr_channel_create
+ * @description		: 流媒体音乐频道任务创建
+ * @param - chnid   : 频道号
+ * @return 			: 成功返回 0; 失败返回 -1
+ */
 int thr_channel_create(chnid_t chnid)
 {
     msg_channel_t *context;
-    context = malloc(MAX_CHANNEL_DATA);
+    context = malloc(MAX_CHANNEL_DATA);     // 申请内存，将本块内存地址传入线程池中
     if (context == NULL)
     {
         syslog(LOG_ERR, "malloc() : %s", strerror(errno));
@@ -39,6 +53,6 @@ int thr_channel_create(chnid_t chnid)
     }
     memset(context, 0, MAX_CHANNEL_DATA);
     context->chnid = chnid;
-    threadpool_addtask(pool, sendchannel, context);
+    threadpool_addtask(pool, sendchannel, context);     // context指向的内存由线程池负责释放
     return 0;
 }

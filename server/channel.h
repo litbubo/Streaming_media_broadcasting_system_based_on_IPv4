@@ -3,6 +3,6 @@
 
 #include <protocol.h>
 
-int thr_channel_create(chnid_t);
+int thr_channel_create(chnid_t);    // 流媒体音乐频道任务创建
 
 #endif // !__CHANNEL_H__

@@ -1,7 +1,6 @@
 #ifndef __CLIENT_H__
 #define __CLIENT_H__
 
-// #define DEFAULT_PALYERCMD "/usr/bin/mpg123 - > /dev/null"
 // #define DEFAULT_PALYERCMD "/usr/bin/mplayer -"
 #define DEFAULT_PALYERCMD "/usr/bin/mpg123 - > /dev/null"
 

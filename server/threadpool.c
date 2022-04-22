@@ -46,15 +46,12 @@ struct ThreadPool_t // 定义线程池类型
 };
 
 #ifdef DEBUG
-/**
- * printstatus ： 统计忙线程数和存活线程数，并可视化打印
- *
- * 返回值 ： 无
- *
- * 参数 ： ThreadPool_t *线程池类型
- *
- * 打印样例 ： [ ++++++++++----- ] : busy == 10, live == 15
- *
+/*
+ * @name            : printstatus
+ * @description		: 统计忙线程数和存活线程数，并可视化打印
+ *                    打印样例 ： [ ++++++++++----- ] : busy == 10, live == 15
+ * @param - argPool : 线程池
+ * @return 			: 无
  */
 static void printstatus(ThreadPool_t *argPool)
 {
@@ -75,15 +72,11 @@ static void printstatus(ThreadPool_t *argPool)
 }
 #endif // DEBUG
 
-/**
- * working ： 工作者线程任务函数，负责从任务队列中取出任务并执行
- *
- * 返回值 ： NULL
- *
- * 参数 ： void *类型，传入线程池
- *
- * 打印样例 ： [thread = 139987412481792] is going to work...
- *
+/*
+ * @name            : working
+ * @description		: 工作者线程任务函数，负责从任务队列中取出任务并执行
+ * @param - arg 	: 传入线程池对象
+ * @return 			: NULL
  */
 static void *working(void *arg)
 {
@@ -155,13 +148,11 @@ static void *working(void *arg)
     pthread_exit(NULL);
 }
 
-/**
- * manager ： 管理者线程任务函数，负责监视、增加和减少线程池中线程的存活线程数量
- *
- * 返回值 ： NULL
- *
- * 参数 ： void *类型，传入线程池
- *
+/*
+ * @name            : manager
+ * @description		: 管理者线程任务函数，负责监视、增加和减少线程池中线程的存活线程数量
+ * @param - arg 	: 传入线程池对象
+ * @return 			: NULL
  */
 static void *manager(void *arg)
 {
@@ -222,15 +213,13 @@ static void *manager(void *arg)
     pthread_exit(NULL);
 }
 
-/**
- * threadpool_create ： 线程池创建函数，创建一个线程池
- *
- * 返回值 ： 失败返回 NULL，成功返回线程池对象地址
- *
- * 参数 ： min：最小线程池数，max：最大线程池数，queueCapacity：最大任务队列数
- *
- * 失败打印样例 ： taskQueue malloc failed ...
- *
+/*
+ * @name            : threadpool_create
+ * @description		: 线程池创建函数，创建一个线程池
+ * @param - min 	: 最小线程池数
+ * @param - max 	: 最大线程池数
+ * @param - queueCapacity : 最大任务队列数
+ * @return 			: 失败返回 NULL，成功返回线程池对象地址
  */
 ThreadPool_t *threadpool_create(int min, int max, int queueCapacity)
 {
@@ -301,13 +290,11 @@ ThreadPool_t *threadpool_create(int min, int max, int queueCapacity)
     return NULL;
 }
 
-/**
- * threadpool_destroy ： 线程池销毁函数，销毁一个线程池
- *
- * 返回值 ： 失败返回 -1，成功返回 0
- *
- * 参数 ： ThreadPool_t *类型，传入需要销毁的线程
- *
+/*
+ * @name            : threadpool_destroy
+ * @description		: 线程池销毁函数，销毁一个线程池
+ * @param - argPool : 传入需要销毁的线程池对象
+ * @return 			: 失败返回 -1，成功返回 0
  */
 int threadpool_destroy(ThreadPool_t *argPool)
 {
@@ -346,13 +333,13 @@ int threadpool_destroy(ThreadPool_t *argPool)
     return 0;
 }
 
-/**
- * threadpool_addtask ： 任务队列添加任务函数，添加一个任务
- *
- * 返回值 ： 失败返回 -1，成功返回 0
- *
- * 参数 ： argPool：需要添加任务的线程池， function：任务函数，arg：任务函数参数
- *
+/*
+ * @name            : threadpool_addtask
+ * @description		: 任务队列添加任务函数，添加一个任务
+ * @param - argPool : 传入需要添加任务的线程池
+ * @param - function: 任务函数
+ * @param - arg     : 任务函数参数
+ * @return 			: 失败返回 -1，成功返回 0
  */
 int threadpool_addtask(ThreadPool_t *argPool, void (*function)(void *, volatile int*), void *arg)
 {
@@ -380,13 +367,11 @@ int threadpool_addtask(ThreadPool_t *argPool, void (*function)(void *, volatile 
     return 0;
 }
 
-/**
- * threadexit_unlock ： 线程退出函数，并将该线程 ID 从工作者线程数组中删除
- *
- * 返回值 ： 无
- *
- * 参数 ： argPool：ThreadPool_t *类型，传入当前线程所在的线程池
- *
+/*
+ * @name            : threadexit_unlock
+ * @description		: 线程退出函数，并将该线程 ID 从工作者线程数组中删除
+ * @param - argPool : 传入线程池对象
+ * @return 			: 无
  */
 void threadexit_unlock(ThreadPool_t *argPool)
 {
@@ -408,13 +393,11 @@ void threadexit_unlock(ThreadPool_t *argPool)
     pthread_exit(NULL);
 }
 
-/**
- * get_thread_live ： 获取线程池中存活线程数
- *
- * 返回值 ： 线程池中存活线程数
- *
- * 参数 ： argPool：ThreadPool_t *类型，传入当前线程所在的线程池
- *
+/*
+ * @name            : get_thread_live
+ * @description		: 获取线程池中存活线程数
+ * @param - argPool : 传入线程池对象
+ * @return 			: 线程池中存活线程数
  */
 int get_thread_live(ThreadPool_t *argPool)
 {
@@ -426,13 +409,11 @@ int get_thread_live(ThreadPool_t *argPool)
     return num;
 }
 
-/**
- * get_thread_busy ： 获取线程池中忙线程数
- *
- * 返回值 ： 线程池中忙线程数
- *
- * 参数 ： argPool：ThreadPool_t *类型，传入当前线程所在的线程池
- *
+/*
+ * @name            : get_thread_busy
+ * @description		: 获取线程池中忙线程数
+ * @param - argPool : 传入线程池对象
+ * @return 			: 线程池中忙线程数
  */
 int get_thread_busy(ThreadPool_t *argPool)
 {
