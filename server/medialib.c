@@ -14,26 +14,32 @@
 #include "server_conf.h"
 #include "tokenbucket.h"
 
-#define PATHSIZE 4096
-#define NAMESIZE 256
-#define LINEBUFSIZE 1024
+#define PATHSIZE 4096               // 文件路径最大长度
+#define NAMESIZE 256                // 文件名最大长度
+#define LINEBUFSIZE 1024            // 读文件行缓冲区
 
-#define MP3_BITRATE (128 * 1024) // correct bps:128*1024
+#define MP3_BITRATE (128 * 1024)    // 128 * 1024 bps
 
-typedef struct channel_context_t
+typedef struct channel_context_t    //频道内容描述结构体
 {
     chnid_t chnid;
     char *desc;
     glob_t globes;
-    int pos; // cur song
-    int fd;  // file descriptor
-    off_t offset;
+    int pos;                        // 当前歌曲在媒体库中的位置
+    int fd;                         // 当前歌曲的文件描述符
+    off_t offset;                   // 当前歌曲的读取偏移量
     tokenbt_t *tb;
 } channel_context_t;
 
 static channel_context_t chn_context[MAXCHNID + 1];
-static int total_chn = 0; // number
+static int total_chn = 0;           // 总共的有效频道个数
 
+/*
+ * @name            : getpathcontent
+ * @description		: 从指定的路径中取得该频道所有需要的信息
+ * @param - path    : 文件路径
+ * @return 			: 成功返回 channel_context_t 对象地址; 失败返回 NULL
+ */
 static channel_context_t *getpathcontent(const char *path)
 {
     char linebuf[LINEBUFSIZE];
@@ -113,16 +119,23 @@ static channel_context_t *getpathcontent(const char *path)
     return me;
 }
 
+/*
+ * @name            : open_next
+ * @description		: 打开指定频道的下一首歌曲
+ * @param - chnid   : 频道号
+ * @return 			: 成功返回 0; 失败返回 -1
+ */
 static int open_next(chnid_t chnid)
 {
     int i;
     for (i = 0; i < chn_context[chnid].globes.gl_pathc; i++)
     {
         chn_context[chnid].pos++;
-        if (chn_context[chnid].pos == chn_context[chnid].globes.gl_pathc)
+        if (chn_context[chnid].pos == chn_context[chnid].globes.gl_pathc)       // 循环播放
             chn_context[chnid].pos = 0;
         close(chn_context[chnid].fd);
         chn_context[chnid].offset = 0;
+        // 打开下一首
         chn_context[chnid].fd = open(chn_context[chnid].globes.gl_pathv[chn_context[chnid].pos], O_RDONLY);
         if (chn_context[chnid].fd < 0)
         {
@@ -136,6 +149,13 @@ static int open_next(chnid_t chnid)
     return -1;
 }
 
+/*
+ * @name            : mlib_getchnlist
+ * @description		: 从媒体库获取节目单信息和频道总个数
+ * @param - list    : 传出参数，填入节目单信息
+ * @param - size    : 传出参数，填入频道总个数
+ * @return 			: 成功返回 0; 失败返回 -1
+ */
 int mlib_getchnlist(mlib_listdesc_t **list, int *size)
 {
     int i, ret;
@@ -167,7 +187,7 @@ int mlib_getchnlist(mlib_listdesc_t **list, int *size)
         // fprintf(stderr, "malloc() : %s\n", strerror(errno));
         return -1;
     }
-    for (i = 0; i < globes.gl_pathc; i++)
+    for (i = 0; i < globes.gl_pathc; i++)       // 分别获取 ch1 ch2 ch3 ch4 中的频道内容并保存在 chn_context 中
     {
         retmp = getpathcontent(globes.gl_pathv[i]);
         if (retmp != NULL)
@@ -179,7 +199,7 @@ int mlib_getchnlist(mlib_listdesc_t **list, int *size)
             free(retmp);
         }
     }
-    *list = realloc(tmp, sizeof(mlib_listdesc_t) * total_chn);
+    *list = realloc(tmp, sizeof(mlib_listdesc_t) * total_chn);      // 给 *list 重新分配内存
     if (list == NULL)
     {
         syslog(LOG_ERR, "realloc() : %s", strerror(errno));
@@ -191,6 +211,12 @@ int mlib_getchnlist(mlib_listdesc_t **list, int *size)
     return 0;
 }
 
+/*
+ * @name            : mlib_freechnlist
+ * @description		: 释放节目单信息存储所占的内存
+ * @param - list    : 
+ * @return 			: 成功返回 0
+ */
 int mlib_freechnlist(struct mlib_listdesc_t *list)
 {
     int i;
@@ -202,6 +228,11 @@ int mlib_freechnlist(struct mlib_listdesc_t *list)
     return 0;
 }
 
+/*
+ * @name            : mlib_freechncontext
+ * @description		: 释放chn_context数组的内存
+ * @return 			: 成功返回 0
+ */
 int mlib_freechncontext()
 {
     int i;
@@ -217,6 +248,14 @@ int mlib_freechncontext()
     return 0;
 }
 
+/*
+ * @name            : mlib_readchn
+ * @description		: 按频道读取对应媒体库流媒体内容
+ * @param - chnid   : 频道号
+ * @param - buf     : 存入流媒体内容的缓冲区指针
+ * @param - size    : buf的最大容量
+ * @return 			: 返回读取到的有效内容总长度
+ */
 ssize_t mlib_readchn(chnid_t chnid, void *buf, size_t size)
 {
     int token, len;
@@ -230,13 +269,13 @@ ssize_t mlib_readchn(chnid_t chnid, void *buf, size_t size)
                 return 0;
             syslog(LOG_ERR, "pread() : %s", strerror(errno));
             // fprintf(stderr, "pread() : %s\n", strerror(errno));
-            open_next(chnid);
+            open_next(chnid);       // 如果这首歌曲读取失败了，那就切换下一首歌曲播放
         }
         else if (len == 0)
         {
             syslog(LOG_INFO, "song: %s is over", chn_context[chnid].globes.gl_pathv[chn_context[chnid].pos]);
             // fprintf(stdout, "song: %s is over\n", chn_context[chnid].globes.gl_pathv[chn_context[chnid].pos]);
-            open_next(chnid);
+            open_next(chnid);       // 这首歌曲读取结束了，那就切换下一首歌曲播放
             break;
         }
         else
@@ -245,7 +284,7 @@ ssize_t mlib_readchn(chnid_t chnid, void *buf, size_t size)
             break;
         }
     }
-    if (len < token)
+    if (len < token)                // 令牌没用完，归还令牌
     {
         tokenbt_returntoken(chn_context[chnid].tb, token - len);
     }

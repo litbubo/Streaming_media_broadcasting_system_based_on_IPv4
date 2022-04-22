@@ -39,6 +39,7 @@ server_conf_t server_conf =
         .mgroup     = DEFAULT_MGROUP
     };
 
+// 命令行参数
 struct option opt[] =
     {
         {"mgroup"  , required_argument, NULL, 'M'},
@@ -49,6 +50,7 @@ struct option opt[] =
         {"help"    , no_argument      , NULL, 'H'}
     };
 
+// 命令行参数帮助
 static void print_help()
 {
     printf("-M --mgroup     自定义多播组地址\n");
@@ -59,6 +61,7 @@ static void print_help()
     printf("-H --help       显示帮助       \n");
 }
 
+// 守护进程
 static int daemon_init()
 {
     pid_t pid;
@@ -93,7 +96,8 @@ static int daemon_init()
     return 0;
 }
 
-static void daemon_exit(int s) // 信号捕捉函数，用于推出前清理
+// 信号捕捉函数，退出前关闭各个模块，清理内存
+static void daemon_exit(int s)
 {
     threadpool_destroy(pool);
     mlib_freechnlist(list);
@@ -104,6 +108,7 @@ static void daemon_exit(int s) // 信号捕捉函数，用于推出前清理
     exit(EXIT_SUCCESS);
 }
 
+// 初始化 UDP 套接字
 static int socket_init()
 {
     int ret;
@@ -142,7 +147,7 @@ int main(int argc, char **argv)
     int list_size;
     struct sigaction action;
 
-    openlog("netradio", LOG_PID | LOG_PERROR, LOG_DAEMON);
+    openlog("netradio", LOG_PID | LOG_PERROR, LOG_DAEMON);  // 打开系统日志
 
     while (1)
     {
@@ -200,7 +205,7 @@ int main(int argc, char **argv)
             server_conf.runmode,
             server_conf.ifname); */
 
-    if (server_conf.runmode == RUN_DAEMON)
+    if (server_conf.runmode == RUN_DAEMON)  // 判断系统运行模式
     {
         ret = daemon_init();
         if (ret < 0)
@@ -214,11 +219,11 @@ int main(int argc, char **argv)
     action.sa_flags = 0;
     sigemptyset(&action.sa_mask);
     sigaddset(&action.sa_mask, SIGINT);
-    // sigaddset(&action.sa_mask, SIGQUIT);
+    sigaddset(&action.sa_mask, SIGQUIT);
     sigaddset(&action.sa_mask, SIGTSTP);
     action.sa_handler = daemon_exit;
     sigaction(SIGINT, &action, NULL); // 注册信号捕捉函数
-    // sigaction(SIGQUIT, &action, NULL);
+    sigaction(SIGQUIT, &action, NULL);
     sigaction(SIGTSTP, &action, NULL);
 
     socket_init();
