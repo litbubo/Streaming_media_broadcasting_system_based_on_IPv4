@@ -89,9 +89,25 @@ Streaming_media_broadcasting_system_based_on_IPv4/
 
 ## 部署
 
+### Clone 代码
 ```shell
 $ git clone https://github.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4.git	#Github		           # https://jihulab.com/litbubo/Streaming_media_broadcasting_system_based_on_IPv4.git   jihulab
 $ cd Streaming_media_broadcasting_system_based_on_IPv4/
+```
+
+### X86 Linux
+```shell
+$ sudo cp -r ./medialib/ /var/
+$ cd server/
+$ make -f Makefile
+$ ./server -R 0  # 守护进程运行
+$ cd ../client/
+$ make -f Makefile
+$ ./start.sh  # 启动客户端，为防止丢帧，首次启动务必使用此脚本
+```
+
+### Arm
+```shell
 $ sudo cp -r ./medialib/ /var/
 $ cd server/
 $ make
